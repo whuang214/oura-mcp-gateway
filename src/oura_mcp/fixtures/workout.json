@@ -1,0 +1,8 @@
+{
+  "data": [
+    {"id": "wo-20260709-a", "day": "2026-07-09", "activity": "running", "label": "Travel run", "intensity": "moderate", "calories": 340, "distance": 5100, "start_datetime": "2026-07-09T06:30:00-04:00", "end_datetime": "2026-07-09T07:05:00-04:00"},
+    {"id": "wo-20260709-b", "day": "2026-07-09", "activity": "walking", "label": "Cooldown", "intensity": "easy", "calories": 50, "distance": 900, "start_datetime": "2026-07-09T06:30:00-04:00", "end_datetime": "2026-07-09T06:45:00-04:00"},
+    {"id": "wo-20260710", "day": "2026-07-10", "activity": "volleyball", "label": "Open gym", "intensity": "hard", "calories": 620, "distance": null, "start_datetime": "2026-07-10T19:00:00-06:00", "end_datetime": "2026-07-10T21:15:00-06:00"}
+  ],
+  "next_token": null
+}

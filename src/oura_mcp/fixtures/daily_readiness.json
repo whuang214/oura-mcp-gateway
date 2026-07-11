@@ -1,0 +1,8 @@
+{
+  "data": [
+    {"id": "dr-20260708", "day": "2026-07-08", "score": 79, "temperature_deviation": -0.1, "timestamp": "2026-07-08T07:15:00-06:00"},
+    {"id": "dr-20260709", "day": "2026-07-09", "score": 84, "temperature_deviation": 0.2, "timestamp": "2026-07-09T08:10:00-04:00"},
+    {"id": "dr-20260710", "day": "2026-07-10", "score": 91, "temperature_deviation": 0.0, "timestamp": "2026-07-10T07:30:00-06:00"}
+  ],
+  "next_token": null
+}

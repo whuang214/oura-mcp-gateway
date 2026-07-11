@@ -1,0 +1,8 @@
+{
+  "data": [
+    {"id": "dres-20260708", "day": "2026-07-08", "level": "solid", "timestamp": "2026-07-08T23:59:00-06:00"},
+    {"id": "dres-20260709", "day": "2026-07-09", "level": "adequate", "timestamp": "2026-07-09T23:59:00-04:00"},
+    {"id": "dres-20260710", "day": "2026-07-10", "level": "strong", "timestamp": "2026-07-10T23:59:00-06:00"}
+  ],
+  "next_token": null
+}

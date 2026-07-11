@@ -1,0 +1,11 @@
+{
+  "data": [
+    {"id": "sl-20260708-long", "day": "2026-07-08", "type": "long_sleep", "bedtime_start": "2026-07-07T23:05:00-06:00", "bedtime_end": "2026-07-08T07:10:00-06:00", "total_sleep_duration": 27000, "efficiency": 91, "average_hrv": 51, "lowest_heart_rate": 46},
+    {"id": "sl-20260709-long-b", "day": "2026-07-09", "type": "long_sleep", "bedtime_start": "2026-07-09T00:05:00-04:00", "bedtime_end": "2026-07-09T08:05:00-04:00", "total_sleep_duration": 25200, "efficiency": 89, "average_hrv": 47, "lowest_heart_rate": 47},
+    {"id": "sl-20260709-nap", "day": "2026-07-09", "type": "late_nap", "bedtime_start": "2026-07-09T16:00:00-04:00", "bedtime_end": "2026-07-09T16:40:00-04:00", "total_sleep_duration": 1800, "efficiency": 75, "average_hrv": 40, "lowest_heart_rate": 55},
+    {"id": "sl-20260709-rest", "day": "2026-07-09", "type": "rest", "bedtime_start": "2026-07-09T19:00:00-04:00", "bedtime_end": "2026-07-09T19:20:00-04:00", "total_sleep_duration": 900, "efficiency": 70},
+    {"id": "sl-20260710-long", "day": "2026-07-10", "type": "long_sleep", "bedtime_start": "2026-07-09T23:30:00-06:00", "bedtime_end": "2026-07-10T07:30:00-06:00", "total_sleep_duration": 26400, "efficiency": 92, "average_hrv": 56, "lowest_heart_rate": 44},
+    {"id": "sl-20260710-deleted", "day": "2026-07-10", "type": "deleted", "bedtime_start": "2026-07-10T12:00:00-06:00", "bedtime_end": "2026-07-10T12:10:00-06:00", "total_sleep_duration": 300}
+  ],
+  "next_token": null
+}

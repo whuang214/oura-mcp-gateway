@@ -1,0 +1,9 @@
+{
+  "data": [
+    {"id": "da-20260708", "day": "2026-07-08", "score": 75, "steps": 8123, "active_calories": 421, "timestamp": "2026-07-08T04:00:00-06:00"},
+    {"id": "da-20260709", "day": "2026-07-09", "score": 88, "steps": 12450, "active_calories": 733, "timestamp": "2026-07-09T04:00:00-04:00"},
+    {"id": "da-20260710", "day": "2026-07-10", "score": 86, "steps": 10101, "active_calories": 612, "timestamp": "2026-07-10T04:00:00-06:00"},
+    {"id": "da-20260711", "day": "2026-07-11", "score": 43, "steps": 1800, "active_calories": 95, "timestamp": "2026-07-11T04:00:00-06:00"}
+  ],
+  "next_token": null
+}

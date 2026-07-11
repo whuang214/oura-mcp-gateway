@@ -1,0 +1,42 @@
+[project]
+name = "oura-mcp"
+version = "0.1.0"
+description = "Read-only personal Oura API v2 MCP server for normalized daily recovery data"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+  "httpx>=0.28.1,<1",
+  "mcp==1.28.1",
+  "pydantic>=2.12,<3",
+  "pywin32>=311; sys_platform == 'win32'",
+  "tzdata>=2025.2",
+]
+
+[project.scripts]
+oura-mcp = "oura_mcp.server:main"
+oura-oauth = "oura_mcp.oauth_cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4,<9",
+  "pytest-cov>=6.2,<7",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/oura_mcp"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["oura_mcp"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
