@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -66,6 +67,46 @@ def test_token_store_round_trip_is_atomic_and_leaves_no_temporary_file(tmp_path:
     assert loaded.access_token == "access-value"
     assert loaded.expires_at == expires
     assert list(path.parent.glob(".oura-token-*.tmp")) == []
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows DACL enforcement is Windows-specific")
+def test_token_store_rejects_an_everyone_read_ace(tmp_path: Path) -> None:
+    import ntsecuritycon
+    import win32security
+
+    path = tmp_path / "secure" / "tokens.json"
+    store = TokenStore(path)
+    store.save(
+        _token(
+            "private-access",
+            expires_at=datetime(2026, 7, 11, 19, tzinfo=timezone.utc),
+        )
+    )
+    descriptor = win32security.GetNamedSecurityInfo(
+        str(path),
+        win32security.SE_FILE_OBJECT,
+        win32security.DACL_SECURITY_INFORMATION,
+    )
+    dacl = descriptor.GetSecurityDescriptorDacl()
+    assert dacl is not None
+    everyone_sid = win32security.CreateWellKnownSid(win32security.WinWorldSid, None)
+    dacl.AddAccessAllowedAce(
+        win32security.ACL_REVISION,
+        ntsecuritycon.FILE_GENERIC_READ,
+        everyone_sid,
+    )
+    win32security.SetNamedSecurityInfo(
+        str(path),
+        win32security.SE_FILE_OBJECT,
+        win32security.DACL_SECURITY_INFORMATION,
+        None,
+        None,
+        dacl,
+        None,
+    )
+
+    with pytest.raises(TokenStoreError, match="readable by another Windows principal"):
+        store.load()
 
 
 @pytest.mark.anyio

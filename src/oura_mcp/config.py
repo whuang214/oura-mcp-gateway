@@ -56,7 +56,7 @@ _SUPPORTED_OURA_KEYS = frozenset(
 DotenvValues = Mapping[str, str | None]
 
 
-def _windows_user_and_system_sids() -> tuple[object, object]:
+def _windows_security_sids() -> tuple[object, object, object]:
     import win32api
     import win32con
     import win32security
@@ -67,10 +67,13 @@ def _windows_user_and_system_sids() -> tuple[object, object]:
     user_sid = win32security.GetTokenInformation(
         process_token, win32security.TokenUser
     )[0]
+    owner_sid = win32security.GetTokenInformation(
+        process_token, win32security.TokenOwner
+    )
     system_sid = win32security.CreateWellKnownSid(
         win32security.WinLocalSystemSid, None
     )
-    return user_sid, system_sid
+    return user_sid, owner_sid, system_sid
 
 
 def _windows_sid_equal(left: object, right: object) -> bool:
@@ -113,16 +116,16 @@ def _protect_project_env(path: Path) -> os.stat_result:
         import ntsecuritycon
         import win32security
 
-        user_sid, system_sid = _windows_user_and_system_sids()
+        user_sid, default_owner_sid, system_sid = _windows_security_sids()
         descriptor = win32security.GetNamedSecurityInfo(
             str(path),
             win32security.SE_FILE_OBJECT,
             win32security.OWNER_SECURITY_INFORMATION,
         )
         owner_sid = descriptor.GetSecurityDescriptorOwner()
-        if owner_sid is None or not (
-            _windows_sid_equal(owner_sid, user_sid)
-            or _windows_sid_equal(owner_sid, system_sid)
+        trusted_owner_sids = (user_sid, default_owner_sid, system_sid)
+        if owner_sid is None or not any(
+            _windows_sid_equal(owner_sid, trusted) for trusted in trusted_owner_sids
         ):
             raise ConfigurationError("Project .env must be owned by the current Windows user")
         dacl = win32security.ACL()
@@ -135,18 +138,27 @@ def _protect_project_env(path: Path) -> os.stat_result:
         win32security.SetNamedSecurityInfo(
             str(path),
             win32security.SE_FILE_OBJECT,
-            win32security.DACL_SECURITY_INFORMATION
+            win32security.OWNER_SECURITY_INFORMATION
+            | win32security.DACL_SECURITY_INFORMATION
             | win32security.PROTECTED_DACL_SECURITY_INFORMATION,
-            None,
+            user_sid,
             None,
             dacl,
             None,
         )
-        secured = win32security.GetNamedSecurityInfo(
+        secured_descriptor = win32security.GetNamedSecurityInfo(
             str(path),
             win32security.SE_FILE_OBJECT,
-            win32security.DACL_SECURITY_INFORMATION,
-        ).GetSecurityDescriptorDacl()
+            win32security.OWNER_SECURITY_INFORMATION
+            | win32security.DACL_SECURITY_INFORMATION,
+        )
+        secured_owner = secured_descriptor.GetSecurityDescriptorOwner()
+        if secured_owner is None or not (
+            _windows_sid_equal(secured_owner, user_sid)
+            or _windows_sid_equal(secured_owner, system_sid)
+        ):
+            raise ConfigurationError("Project .env ownership could not be protected")
+        secured = secured_descriptor.GetSecurityDescriptorDacl()
         if secured is None:
             raise ConfigurationError("Project .env has an unsafe Windows DACL")
         allowed_sids = (user_sid, system_sid)

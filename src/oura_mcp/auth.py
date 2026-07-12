@@ -122,15 +122,16 @@ class TokenBinding:
         return isinstance(candidate, str) and secrets.compare_digest(candidate, self.client_id_sha256)
 
 
-def _windows_user_and_system_sids() -> tuple[object, object]:
+def _windows_security_sids() -> tuple[object, object, object]:
     import win32api
     import win32con
     import win32security
 
     process_token = win32security.OpenProcessToken(win32api.GetCurrentProcess(), win32con.TOKEN_QUERY)
     user_sid = win32security.GetTokenInformation(process_token, win32security.TokenUser)[0]
+    owner_sid = win32security.GetTokenInformation(process_token, win32security.TokenOwner)
     system_sid = win32security.CreateWellKnownSid(win32security.WinLocalSystemSid, None)
-    return user_sid, system_sid
+    return user_sid, owner_sid, system_sid
 
 
 def _windows_sid_equal(left: object, right: object) -> bool:
@@ -153,15 +154,17 @@ def _secure_permissions(path: Path, *, directory: bool) -> None:
         import ntsecuritycon
         import win32security
 
-        user_sid, system_sid = _windows_user_and_system_sids()
+        user_sid, _, system_sid = _windows_security_sids()
         dacl = win32security.ACL()
         dacl.AddAccessAllowedAce(win32security.ACL_REVISION, ntsecuritycon.FILE_ALL_ACCESS, user_sid)
         dacl.AddAccessAllowedAce(win32security.ACL_REVISION, ntsecuritycon.FILE_ALL_ACCESS, system_sid)
         win32security.SetNamedSecurityInfo(
             str(path),
             win32security.SE_FILE_OBJECT,
-            win32security.DACL_SECURITY_INFORMATION | win32security.PROTECTED_DACL_SECURITY_INFORMATION,
-            None,
+            win32security.OWNER_SECURITY_INFORMATION
+            | win32security.DACL_SECURITY_INFORMATION
+            | win32security.PROTECTED_DACL_SECURITY_INFORMATION,
+            user_sid,
             None,
             dacl,
             None,
@@ -192,15 +195,16 @@ def _validate_secure_file(path: Path) -> os.stat_result:
 
         import win32security
 
-        user_sid, system_sid = _windows_user_and_system_sids()
+        user_sid, default_owner_sid, system_sid = _windows_security_sids()
         descriptor = win32security.GetNamedSecurityInfo(
             str(path),
             win32security.SE_FILE_OBJECT,
             win32security.OWNER_SECURITY_INFORMATION | win32security.DACL_SECURITY_INFORMATION,
         )
         owner_sid = descriptor.GetSecurityDescriptorOwner()
-        if owner_sid is None or not (
-            _windows_sid_equal(owner_sid, user_sid) or _windows_sid_equal(owner_sid, system_sid)
+        trusted_owner_sids = (user_sid, default_owner_sid, system_sid)
+        if owner_sid is None or not any(
+            _windows_sid_equal(owner_sid, trusted) for trusted in trusted_owner_sids
         ):
             raise TokenStoreError("The OAuth token store is not owned by the current Windows user")
         dacl = descriptor.GetSecurityDescriptorDacl()
@@ -347,6 +351,17 @@ def _fcntl_module() -> _FcntlModule:
     return cast(_FcntlModule, importlib.import_module("fcntl"))
 
 
+class _MsvcrtModule(Protocol):
+    LK_NBLCK: int
+    LK_UNLCK: int
+
+    def locking(self, descriptor: int, mode: int, byte_count: int) -> None: ...
+
+
+def _msvcrt_module() -> _MsvcrtModule:
+    return cast(_MsvcrtModule, importlib.import_module("msvcrt"))
+
+
 class InterProcessFileLock:
     """Small cross-platform advisory lock held on a stable sibling file."""
 
@@ -388,8 +403,7 @@ class InterProcessFileLock:
             raise TokenStoreError("The OAuth token refresh lock is unavailable")
         os.lseek(self._descriptor, 0, os.SEEK_SET)
         if os.name == "nt":
-            import msvcrt
-
+            msvcrt = _msvcrt_module()
             msvcrt.locking(self._descriptor, msvcrt.LK_NBLCK, 1)
             return
         fcntl = _fcntl_module()
@@ -400,8 +414,7 @@ class InterProcessFileLock:
             return
         os.lseek(self._descriptor, 0, os.SEEK_SET)
         if os.name == "nt":
-            import msvcrt
-
+            msvcrt = _msvcrt_module()
             msvcrt.locking(self._descriptor, msvcrt.LK_UNLCK, 1)
             return
         fcntl = _fcntl_module()

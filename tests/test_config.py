@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+import oura_mcp.config as config_module
 from oura_mcp.config import Settings
 from oura_mcp.errors import ConfigurationError, ConfigurationFileMissingError
 
@@ -119,16 +120,40 @@ def test_project_env_is_hardened_before_values_are_loaded(tmp_path: Path) -> Non
         win32security.ConvertSidToStringSid(user_sid),
         win32security.ConvertSidToStringSid(system_sid),
     }
-    dacl = win32security.GetNamedSecurityInfo(
+    descriptor = win32security.GetNamedSecurityInfo(
         str(env_file),
         win32security.SE_FILE_OBJECT,
-        win32security.DACL_SECURITY_INFORMATION,
-    ).GetSecurityDescriptorDacl()
+        win32security.OWNER_SECURITY_INFORMATION
+        | win32security.DACL_SECURITY_INFORMATION,
+    )
+    owner = descriptor.GetSecurityDescriptorOwner()
+    assert owner is not None
+    assert win32security.ConvertSidToStringSid(owner) in allowed
+    dacl = descriptor.GetSecurityDescriptorDacl()
     assert dacl is not None
     for index in range(dacl.GetAceCount()):
         ace = dacl.GetAce(index)
         if ace[0][0] == win32security.ACCESS_ALLOWED_ACE_TYPE:
             assert win32security.ConvertSidToStringSid(ace[-1]) in allowed
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows token ownership is Windows-specific")
+def test_windows_security_context_includes_the_token_default_owner() -> None:
+    import win32api
+    import win32con
+    import win32security
+
+    token = win32security.OpenProcessToken(
+        win32api.GetCurrentProcess(), win32con.TOKEN_QUERY
+    )
+    expected_owner = win32security.GetTokenInformation(
+        token, win32security.TokenOwner
+    )
+    _, owner_sid, _ = config_module._windows_security_sids()
+
+    assert win32security.ConvertSidToStringSid(owner_sid) == (
+        win32security.ConvertSidToStringSid(expected_owner)
+    )
 
 
 def test_parser_is_literal_and_relative_paths_are_project_relative(

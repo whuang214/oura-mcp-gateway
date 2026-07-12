@@ -295,6 +295,6 @@ incremental/backfill planning, provisional refresh, v2 transformation, determini
 duration/unit conversion, travel offsets, resilience opt-in, SpO2 opt-in, and an in-memory MCP contract call. No test
 writes to Google Sheets or the live Oura API.
 
-CI runs linting, static type checks, tests, and distribution builds on Windows and Linux with Python 3.11–3.14. The
-project is available under the [MIT License](LICENSE); see the [Privacy Policy](PRIVACY.md) and
+This repository intentionally uses maintainer-run local verification instead of GitHub-hosted CI. Run the checks above
+before publishing changes. The project is available under the [MIT License](LICENSE); see the [Privacy Policy](PRIVACY.md) and
 [Terms of Service](TERMS.md) before live use.
