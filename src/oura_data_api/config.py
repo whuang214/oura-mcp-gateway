@@ -1,13 +1,13 @@
 """Strict project ``.env`` runtime configuration with safe diagnostics.
 
-The process environment is intentionally not a configuration source.  Both the
-MCP server and the OAuth helper read exactly ``.env`` from their working
-directory, which keeps setup portable and prevents stale user or service
-environment variables from silently changing a run.
+The process environment is intentionally not a configuration source. The API
+and OAuth helper read exactly one explicit project file, which prevents stale
+Windows, shell, service-manager, proxy, or ASGI variables from changing a run.
 """
 
 from __future__ import annotations
 
+import ipaddress
 import os
 import re
 import stat
@@ -30,22 +30,34 @@ _ENV_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 _SUPPORTED_OURA_KEYS = frozenset(
     {
         "OURA_ACCESS_TOKEN",
+        "OURA_ALLOW_NON_LOOPBACK",
         "OURA_API_BASE_URL",
+        "OURA_API_HOST",
+        "OURA_API_PORT",
         "OURA_AUTHORIZE_URL",
         "OURA_BACKOFF_BASE_SECONDS",
+        "OURA_CACHE_ENABLED",
         "OURA_CLIENT_ID",
         "OURA_CLIENT_SECRET",
+        "OURA_ENABLE_LEGACY_TAGS",
         "OURA_ENABLE_RESILIENCE",
         "OURA_ENABLE_SPO2",
         "OURA_FIXTURE_DIR",
         "OURA_FIXTURE_TODAY",
+        "OURA_GATEWAY_TOKEN",
+        "OURA_HISTORICAL_CACHE_TTL_SECONDS",
         "OURA_HOME_TIMEZONE",
         "OURA_HTTP_TIMEOUT_SECONDS",
+        "OURA_MAX_DATE_RANGE_DAYS",
         "OURA_MAX_RANGE_DAYS",
         "OURA_MAX_RETRIES",
         "OURA_MAX_RETRY_AFTER_SECONDS",
+        "OURA_MAX_TIMESERIES_RANGE_DAYS",
         "OURA_MODE",
         "OURA_OPERATION_TIMEOUT_SECONDS",
+        "OURA_PROFILE_ENABLED",
+        "OURA_PUBLIC_DOCS_ENABLED",
+        "OURA_RECENT_CACHE_TTL_SECONDS",
         "OURA_REDIRECT_URI",
         "OURA_SCOPES",
         "OURA_TOKEN_FILE",
@@ -92,7 +104,7 @@ def _protect_project_env(path: Path) -> os.stat_result:
         details = path.lstat()
     except FileNotFoundError as exc:
         raise ConfigurationFileMissingError(
-            "Project .env is missing; copy .env.example to .env in the configured MCP working directory"
+            "Project .env is missing; copy .env.example to .env in the configured API working directory"
         ) from exc
     except OSError as exc:
         raise ConfigurationError("Project .env could not be inspected") from exc
@@ -343,12 +355,44 @@ def _validate_redirect_uri(uri: str) -> None:
         raise ConfigurationError("OURA_REDIRECT_URI must include a callback path")
 
 
+def _validate_api_host(host: str, *, allow_non_loopback: bool) -> None:
+    if (
+        not host
+        or host != host.strip()
+        or any(character.isspace() or ord(character) < 32 for character in host)
+        or any(character in host for character in "/\\?#@")
+        or "://" in host
+    ):
+        raise ConfigurationError("OURA_API_HOST is invalid")
+    candidate = host[1:-1] if host.startswith("[") and host.endswith("]") else host
+    try:
+        is_loopback = ipaddress.ip_address(candidate).is_loopback
+    except ValueError:
+        if not re.fullmatch(r"[A-Za-z0-9.-]+", candidate):
+            raise ConfigurationError("OURA_API_HOST is invalid") from None
+        is_loopback = candidate.casefold() == "localhost"
+    if not is_loopback and not allow_non_loopback:
+        raise ConfigurationError(
+            "OURA_API_HOST may bind outside loopback only when OURA_ALLOW_NON_LOOPBACK=true"
+        )
+
+
+def _validate_gateway_token(token: str | None) -> None:
+    if token is None:
+        return
+    if len(token) < 32 or not token.isascii() or any(character.isspace() for character in token):
+        raise ConfigurationError(
+            "OURA_GATEWAY_TOKEN must be an ASCII value of at least 32 non-whitespace characters"
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     mode: str
     access_token: str | None = field(default=None, repr=False)
     client_id: str | None = field(default=None, repr=False)
     client_secret: str | None = field(default=None, repr=False)
+    gateway_token: str | None = field(default=None, repr=False)
     redirect_uri: str | None = DEFAULT_REDIRECT_URI
     token_file: Path = field(default_factory=_default_token_file, repr=False)
     authorize_url: str = DEFAULT_AUTHORIZE_URL
@@ -356,14 +400,24 @@ class Settings:
     api_base_url: str = DEFAULT_API_BASE_URL
     scopes: tuple[str, ...] = ("daily", "workout", "session")
     home_timezone: str = "Etc/UTC"
+    api_host: str = "127.0.0.1"
+    api_port: int = 8766
+    allow_non_loopback: bool = False
+    public_docs_enabled: bool = True
     timeout_seconds: float = 20.0
     operation_timeout_seconds: float = 105.0
     max_retries: int = 3
     backoff_base_seconds: float = 0.5
     max_retry_after_seconds: float = 30.0
-    max_range_days: int = 90
+    max_date_range_days: int = 90
+    max_timeseries_range_days: int = 7
     enable_resilience: bool = False
     enable_spo2: bool = False
+    enable_legacy_tags: bool = False
+    profile_enabled: bool = False
+    cache_enabled: bool = True
+    recent_cache_ttl_seconds: int = 300
+    historical_cache_ttl_seconds: int = 3600
     token_refresh_skew_seconds: int = 60
     fixture_dir: Path = field(default_factory=lambda: Path(__file__).with_name("fixtures"))
     fixture_today: date | None = None
@@ -392,12 +446,22 @@ class Settings:
 
         fixture_dir_raw = _value(values, "OURA_FIXTURE_DIR", "") or ""
         token_file_raw = _value(values, "OURA_TOKEN_FILE", "") or ""
+        modern_range = _value(values, "OURA_MAX_DATE_RANGE_DAYS")
+        legacy_range = _value(values, "OURA_MAX_RANGE_DAYS")
+        if modern_range is not None and legacy_range is not None:
+            raise ConfigurationError(
+                "Use OURA_MAX_DATE_RANGE_DAYS only; do not also define legacy OURA_MAX_RANGE_DAYS"
+            )
+        date_range_key = (
+            "OURA_MAX_DATE_RANGE_DAYS" if modern_range is not None else "OURA_MAX_RANGE_DAYS"
+        )
 
         settings = cls(
             mode=mode,
             access_token=_value(values, "OURA_ACCESS_TOKEN"),
             client_id=_value(values, "OURA_CLIENT_ID"),
             client_secret=_value(values, "OURA_CLIENT_SECRET"),
+            gateway_token=_value(values, "OURA_GATEWAY_TOKEN"),
             redirect_uri=_value(values, "OURA_REDIRECT_URI", DEFAULT_REDIRECT_URI)
             or DEFAULT_REDIRECT_URI,
             token_file=(
@@ -413,6 +477,10 @@ class Settings:
             ).rstrip("/"),
             scopes=scopes,
             home_timezone=_value(values, "OURA_HOME_TIMEZONE", "Etc/UTC") or "Etc/UTC",
+            api_host=_value(values, "OURA_API_HOST", "127.0.0.1") or "127.0.0.1",
+            api_port=_env_int(values, "OURA_API_PORT", 8766, minimum=1),
+            allow_non_loopback=_env_bool(values, "OURA_ALLOW_NON_LOOPBACK", False),
+            public_docs_enabled=_env_bool(values, "OURA_PUBLIC_DOCS_ENABLED", True),
             timeout_seconds=_env_float(values, "OURA_HTTP_TIMEOUT_SECONDS", 20.0, minimum=0.1),
             operation_timeout_seconds=_env_float(
                 values, "OURA_OPERATION_TIMEOUT_SECONDS", 105.0, minimum=1.0
@@ -424,9 +492,21 @@ class Settings:
             max_retry_after_seconds=_env_float(
                 values, "OURA_MAX_RETRY_AFTER_SECONDS", 30.0, minimum=0.0
             ),
-            max_range_days=_env_int(values, "OURA_MAX_RANGE_DAYS", 90, minimum=1),
+            max_date_range_days=_env_int(values, date_range_key, 90, minimum=1),
+            max_timeseries_range_days=_env_int(
+                values, "OURA_MAX_TIMESERIES_RANGE_DAYS", 7, minimum=1
+            ),
             enable_resilience=_env_bool(values, "OURA_ENABLE_RESILIENCE", False),
             enable_spo2=_env_bool(values, "OURA_ENABLE_SPO2", False),
+            enable_legacy_tags=_env_bool(values, "OURA_ENABLE_LEGACY_TAGS", False),
+            profile_enabled=_env_bool(values, "OURA_PROFILE_ENABLED", False),
+            cache_enabled=_env_bool(values, "OURA_CACHE_ENABLED", True),
+            recent_cache_ttl_seconds=_env_int(
+                values, "OURA_RECENT_CACHE_TTL_SECONDS", 300, minimum=0
+            ),
+            historical_cache_ttl_seconds=_env_int(
+                values, "OURA_HISTORICAL_CACHE_TTL_SECONDS", 3600, minimum=0
+            ),
             token_refresh_skew_seconds=_env_int(
                 values, "OURA_TOKEN_REFRESH_SKEW_SECONDS", 60, minimum=0
             ),
@@ -442,6 +522,10 @@ class Settings:
         _validate_https_url(self.authorize_url, label="OURA_AUTHORIZE_URL")
         _validate_https_url(self.token_url, label="OURA_TOKEN_URL")
         _validate_https_url(self.api_base_url, label="OURA_API_BASE_URL")
+        _validate_api_host(self.api_host, allow_non_loopback=self.allow_non_loopback)
+        _validate_gateway_token(self.gateway_token)
+        if self.api_port > 65_535:
+            raise ConfigurationError("OURA_API_PORT must be at most 65535")
         if self.redirect_uri is not None:
             _validate_redirect_uri(self.redirect_uri)
         try:
@@ -454,14 +538,23 @@ class Settings:
             "spo2" if scope.casefold() == "spo2daily" else scope.casefold()
             for scope in self.scopes
         }
-        if "daily" not in normalized_scopes:
-            raise ConfigurationError("OURA_SCOPES must include the daily scope")
         if self.enable_spo2 and "spo2" not in normalized_scopes:
             raise ConfigurationError(
                 "OURA_ENABLE_SPO2 requires an SpO2 scope (spo2 or spo2Daily) in OURA_SCOPES"
             )
 
-    def validate_for_sync(self) -> None:
+    def validate_for_api(self) -> None:
+        """Validate the local HTTP boundary without requiring an Oura connection."""
+
+        self.validate_common()
+        if self.gateway_token is None:
+            raise ConfigurationError(
+                "OURA_GATEWAY_TOKEN is required for protected API routes"
+            )
+
+    def validate_for_provider(self) -> None:
+        """Validate that a request may access fixture or live provider data."""
+
         self.validate_common()
         if self.mode == "fixture":
             if not self.fixture_dir.is_dir():
@@ -474,7 +567,12 @@ class Settings:
                 "Oura credentials are not configured; set an access token or OAuth client configuration"
             )
         if not self.token_file.is_file():
-            raise ConfigurationError("Oura OAuth authorization is required before live synchronization")
+            raise ConfigurationError("Oura OAuth authorization is required before live API access")
+
+    def validate_for_sync(self) -> None:
+        """Compatibility alias for callers migrating from the previous local integration."""
+
+        self.validate_for_provider()
 
     @property
     def oauth_client_configured(self) -> bool:
@@ -483,6 +581,12 @@ class Settings:
     @property
     def persisted_token_available(self) -> bool:
         return self.token_file.is_file()
+
+    @property
+    def max_range_days(self) -> int:
+        """Compatibility view used by the pre-refactor collection client."""
+
+        return self.max_date_range_days
 
     @property
     def fixture_data_available(self) -> bool:

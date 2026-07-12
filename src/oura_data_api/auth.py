@@ -24,9 +24,9 @@ import httpx
 from pydantic import ValidationError
 
 from . import __version__
+from .auth_models import OAuthTokenSet
 from .config import Settings
 from .errors import AuthenticationError, ConfigurationError, TokenStoreError
-from .models import OAuthTokenSet
 
 Clock = Callable[[], datetime]
 OAUTH_SESSION_MAX_AGE = timedelta(minutes=10)
@@ -643,7 +643,7 @@ def _canonical_scope(value: str) -> str:
 
 
 class OAuthClient:
-    """Small Oura OAuth client. It never logs or returns token values to MCP."""
+    """Small Oura OAuth client. It never logs or returns token values to API clients."""
 
     def __init__(
         self,
@@ -747,7 +747,10 @@ class OAuthClient:
                 response = await client.get(
                     revoke_url,
                     params={"access_token": access_token},
-                    headers={"Accept": "application/json", "User-Agent": f"oura-mcp/{__version__}"},
+                    headers={
+                        "Accept": "application/json",
+                        "User-Agent": f"oura-data-api/{__version__}",
+                    },
                 )
             except httpx.HTTPError:
                 raise AuthenticationError(
@@ -783,7 +786,10 @@ class OAuthClient:
                 response = await client.post(
                     token_url,
                     data=payload,
-                    headers={"Accept": "application/json", "User-Agent": f"oura-mcp/{__version__}"},
+                    headers={
+                        "Accept": "application/json",
+                        "User-Agent": f"oura-data-api/{__version__}",
+                    },
                 )
             except httpx.HTTPError as exc:
                 raise AuthenticationError("The Oura token endpoint could not be reached") from exc

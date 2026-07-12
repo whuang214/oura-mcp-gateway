@@ -4,7 +4,7 @@ import tarfile
 from io import BytesIO
 from pathlib import Path
 
-from oura_mcp.distribution_audit import audit
+from oura_data_api.distribution_audit import audit
 
 
 def _archive(path: Path, files: dict[str, bytes]) -> None:

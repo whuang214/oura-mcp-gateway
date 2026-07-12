@@ -10,10 +10,10 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import pytest
 
-import oura_mcp.oauth_cli as oauth_cli
-from oura_mcp.auth import OAuthClient, OAuthSessionStore, TokenStore
-from oura_mcp.config import Settings
-from oura_mcp.models import OAuthTokenSet
+import oura_data_api.oauth_cli as oauth_cli
+from oura_data_api.auth import OAuthClient, OAuthSessionStore, TokenStore
+from oura_data_api.auth_models import OAuthTokenSet
+from oura_data_api.config import Settings
 
 
 def _free_local_port() -> int:

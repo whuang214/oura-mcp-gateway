@@ -159,10 +159,14 @@ in memory, and treats Oura as optional supporting evidence. See the
 - Active/workout calories remain context only.
 - Every Sheet write is idempotent and read back before state advances.
 
-## Migration status
+## Implementation status
 
-Commit `6db36ba` is the validated pre-API structure checkpoint. The runtime on
-that commit is still the legacy MCP server. The staged work and exit gates are
-tracked in [the implementation plan](<11 - Implementation Plan.md>);
-documentation may
-describe the approved target before the runtime cutover is complete.
+The repository now implements the API architecture described above. The old
+MCP runtime, destination planner, duplicate transformation path, and MCP
+dependency have been removed from this project. OAuth token files remain
+compatible with the earlier local integration so existing authorization can be
+reused.
+
+The separate MCP adapter and desktop Sheet materializer are intentionally built
+after this API contract is locally validated. Remaining rollout and consumer
+work is tracked in [the implementation plan](<11 - Implementation Plan.md>).

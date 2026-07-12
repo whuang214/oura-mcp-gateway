@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from oura_mcp.config import Settings
+from oura_data_api.config import Settings
 
 
 @pytest.fixture
@@ -15,7 +15,7 @@ def anyio_backend() -> str:
 
 @pytest.fixture
 def fixture_dir() -> Path:
-    return Path(__file__).parents[1] / "src" / "oura_mcp" / "fixtures"
+    return Path(__file__).parents[1] / "src" / "oura_data_api" / "fixtures"
 
 
 @pytest.fixture

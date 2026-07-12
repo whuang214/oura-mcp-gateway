@@ -2,14 +2,14 @@
 
 Effective date: July 11, 2026
 
-These terms apply to Oura MCP Gateway, an open-source, locally operated software project. By using the software, you
+These terms apply to Oura Data API, an open-source, locally operated software project. By using the software, you
 agree to these terms and the [MIT License](LICENSE).
 
 ## Permitted use
 
 You may use, copy, modify, and distribute the software as allowed by the MIT License. You must use it lawfully and only
 with Oura accounts and data you are authorized to access. You are responsible for your OAuth application, credentials,
-MCP host, downstream destinations, and compliance with Oura's terms and developer requirements.
+API deployment, connected clients, downstream destinations, and compliance with Oura's terms and developer requirements.
 
 Each user must supply and protect their own Oura developer application credentials. Maintainer credentials are not
 shared. This local project does not support a hosted or multi-user OAuth service; operating one requires a separate
@@ -23,13 +23,14 @@ Do not rely on it for emergencies or safety-critical decisions.
 
 ## Third-party services
 
-Oura and any MCP host, AI provider, or other connected destination are independent third parties with their own
+Oura and any API client, AI provider, or other connected destination are independent third parties with their own
 terms, availability, security, and privacy practices. The project maintainer does not control those services and is
 not responsible for their behavior or changes to their APIs.
 
 ## Security and availability
 
-You are responsible for protecting `.env`, OAuth tokens, local files, backups, and any data returned by the gateway.
+You are responsible for protecting `.env`, OAuth tokens, the gateway bearer token, local files, backups, and any data
+returned by the API.
 The software may stop working because of configuration errors, expired authorization, upstream API changes, rate
 limits, network failures, or defects. No uptime, support, data-completeness, or fitness guarantee is provided.
 

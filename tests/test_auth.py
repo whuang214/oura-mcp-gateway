@@ -10,17 +10,17 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 import pytest
 
-import oura_mcp.auth as auth_module
-from oura_mcp.auth import (
+import oura_data_api.auth as auth_module
+from oura_data_api.auth import (
     AuthManager,
     OAuthClient,
     OAuthSessionStore,
     TokenStore,
     code_challenge_for,
 )
-from oura_mcp.config import Settings
-from oura_mcp.errors import AuthenticationError, ConfigurationError, TokenStoreError
-from oura_mcp.models import OAuthTokenSet
+from oura_data_api.auth_models import OAuthTokenSet
+from oura_data_api.config import Settings
+from oura_data_api.errors import AuthenticationError, ConfigurationError, TokenStoreError
 
 
 def _oauth_settings(tmp_path: Path) -> Settings:

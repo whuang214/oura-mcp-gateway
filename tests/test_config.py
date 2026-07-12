@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-import oura_mcp.config as config_module
-from oura_mcp.config import Settings
-from oura_mcp.errors import ConfigurationError, ConfigurationFileMissingError
+import oura_data_api.config as config_module
+from oura_data_api.config import Settings
+from oura_data_api.errors import ConfigurationError, ConfigurationFileMissingError
 
 
 def _write_env(directory: Path, content: str, *, name: str = ".env") -> Path:
@@ -105,7 +105,13 @@ def test_checked_in_env_example_contains_no_credentials() -> None:
 
     assert values["OURA_CLIENT_ID"] == ""
     assert values["OURA_CLIENT_SECRET"] == ""
-    for key in ("OURA_ACCESS_TOKEN", "OURA_CLIENT_ID", "OURA_CLIENT_SECRET"):
+    assert values["OURA_GATEWAY_TOKEN"] == ""
+    for key in (
+        "OURA_ACCESS_TOKEN",
+        "OURA_CLIENT_ID",
+        "OURA_CLIENT_SECRET",
+        "OURA_GATEWAY_TOKEN",
+    ):
         assert values.get(key, "") == ""
 
 
@@ -242,7 +248,6 @@ def test_home_environment_is_poisoned_and_tilde_paths_are_rejected(
         ("OURA_MODE=fixture\nOURA_ENABLE_RESILIENCE=perhaps\n", "must be true or false"),
         ("OURA_MODE=fixture\nOURA_HOME_TIMEZONE=Mars/Olympus\n", "IANA timezone"),
         ("OURA_MODE=fixture\nOURA_SCOPES=,,,\n", "at least one scope"),
-        ("OURA_MODE=fixture\nOURA_SCOPES=workout session\n", "include the daily scope"),
         (
             "OURA_MODE=fixture\nOURA_SCOPES=daily workout session\nOURA_ENABLE_SPO2=true\n",
             "requires an SpO2 scope",
@@ -268,6 +273,69 @@ def test_v2_spo2daily_scope_alias_is_accepted(tmp_path: Path) -> None:
 
     assert settings.scopes == ("daily", "spo2Daily")
     assert settings.enable_spo2 is True
+
+
+def test_granular_non_daily_scope_set_is_accepted(tmp_path: Path) -> None:
+    env_file = _write_env(tmp_path, "OURA_MODE=fixture\nOURA_SCOPES=workout session\n")
+
+    settings = Settings.from_env(env_file)
+
+    assert settings.scopes == ("workout", "session")
+
+
+def test_api_boundary_settings_are_file_only_and_validated(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("OURA_API_HOST", "0.0.0.0")
+    monkeypatch.setenv("OURA_API_PORT", "9999")
+    monkeypatch.setenv("OURA_GATEWAY_TOKEN", "process-value-must-never-be-read")
+    token = "file-only-gateway-token-that-is-long-enough"
+    env_file = _write_env(
+        tmp_path,
+        "\n".join(
+            (
+                "OURA_MODE=fixture",
+                f"OURA_GATEWAY_TOKEN={token}",
+                "OURA_API_HOST=127.0.0.1",
+                "OURA_API_PORT=8766",
+                "OURA_PUBLIC_DOCS_ENABLED=false",
+            )
+        ),
+    )
+
+    settings = Settings.from_env(env_file)
+    settings.validate_for_api()
+
+    assert settings.gateway_token == token
+    assert settings.api_host == "127.0.0.1"
+    assert settings.api_port == 8766
+    assert settings.public_docs_enabled is False
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        ("OURA_MODE=fixture\nOURA_GATEWAY_TOKEN=short\n", "at least 32"),
+        ("OURA_MODE=fixture\nOURA_API_PORT=65536\n", "at most 65535"),
+        ("OURA_MODE=fixture\nOURA_API_HOST=0.0.0.0\n", "outside loopback"),
+        (
+            "OURA_MODE=fixture\nOURA_MAX_RANGE_DAYS=30\nOURA_MAX_DATE_RANGE_DAYS=30\n",
+            "do not also define",
+        ),
+    ],
+)
+def test_api_boundary_rejects_unsafe_configuration(
+    tmp_path: Path, content: str, message: str
+) -> None:
+    env_file = _write_env(tmp_path, content)
+
+    with pytest.raises(ConfigurationError, match=message):
+        Settings.from_env(env_file)
+
+
+def test_api_validation_requires_a_separate_gateway_token() -> None:
+    with pytest.raises(ConfigurationError, match="OURA_GATEWAY_TOKEN"):
+        Settings(mode="fixture").validate_for_api()
 
 
 def test_live_access_token_and_oauth_token_store_sources(tmp_path: Path) -> None:

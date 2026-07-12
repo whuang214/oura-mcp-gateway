@@ -1,4 +1,4 @@
-"""Local OAuth helper; authorization credentials never cross the MCP surface."""
+"""Local OAuth helper; authorization credentials never cross the API surface."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import sys
 import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 from .auth import (
@@ -22,7 +23,7 @@ from .auth import (
     validate_redirect_uri,
 )
 from .config import Settings
-from .errors import AuthenticationError, ConfigurationError, OuraMcpError
+from .errors import AuthenticationError, ConfigurationError, OuraDataError
 
 
 def _authorization_url(settings: Settings, *, use_pkce: bool) -> tuple[str, OAuthSessionStore]:
@@ -86,7 +87,7 @@ def _report_missing_optional_scopes(oauth: OAuthClient, granted_scope: str | Non
 
 def _send_browser_response(handler: BaseHTTPRequestHandler, status: int, message: str) -> None:
     body = (
-        "<!doctype html><html><head><meta charset='utf-8'><title>Oura MCP OAuth</title></head>"
+        "<!doctype html><html><head><meta charset='utf-8'><title>Oura Data API OAuth</title></head>"
         f"<body><p>{message}</p><p>You may close this tab.</p></body></html>"
     ).encode("utf-8")
     handler.send_response(status)
@@ -114,10 +115,10 @@ def _wait_for_callback(
     if redirect.port is None:  # validate_redirect_uri already enforces this; narrows the type.
         raise ConfigurationError("A localhost OAuth redirect must include a port")
     expected_host_header = f"localhost:{redirect.port}".casefold()
-    results: queue.Queue[OAuthCallback | OuraMcpError] = queue.Queue(maxsize=1)
+    results: queue.Queue[OAuthCallback | OuraDataError] = queue.Queue(maxsize=1)
 
     class CallbackHandler(BaseHTTPRequestHandler):
-        server_version = "OuraMcpOAuth"
+        server_version = "OuraDataApiOAuth"
         sys_version = ""
 
         def do_GET(self) -> None:  # noqa: N802 - stdlib handler API
@@ -136,7 +137,7 @@ def _wait_for_callback(
             )
             try:
                 callback = session_store.consume_callback(callback_url)
-            except OuraMcpError as exc:
+            except OuraDataError as exc:
                 _send_browser_response(self, 400, "The OAuth callback could not be validated.")
                 # A forged state leaves the real session intact; keep listening.
                 # A valid denial/expired session consumes it and is terminal.
@@ -177,7 +178,7 @@ def _wait_for_callback(
         session_store.delete()
         raise AuthenticationError("Timed out waiting for the localhost OAuth callback")
     result = results.get_nowait()
-    if isinstance(result, OuraMcpError):
+    if isinstance(result, OuraDataError):
         raise result
     return result
 
@@ -210,7 +211,9 @@ async def _logout(settings: Settings, *, local_only: bool) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Set up Oura OAuth locally without exposing tokens to MCP")
+    parser = argparse.ArgumentParser(
+        description="Set up Oura OAuth locally without exposing tokens to API clients"
+    )
     parser.add_argument(
         "action",
         choices=("authorize", "url", "exchange", "logout"),
@@ -232,6 +235,12 @@ def main() -> None:
         action="store_true",
         help="with logout, remove local state without calling Oura's revoke endpoint",
     )
+    parser.add_argument(
+        "--env-file",
+        type=Path,
+        default=None,
+        help="explicit project .env path; defaults to ./.env",
+    )
     args = parser.parse_args()
     if args.timeout_seconds <= 0:
         parser.error("--timeout-seconds must be positive")
@@ -240,7 +249,11 @@ def main() -> None:
     if args.local_only and args.action != "logout":
         parser.error("--local-only is valid only with logout")
     try:
-        settings = Settings.from_env()
+        settings = (
+            Settings.from_env(args.env_file)
+            if args.env_file is not None
+            else Settings.from_env()
+        )
         if args.action == "authorize":
             raise SystemExit(
                 _authorize(settings, use_pkce=args.pkce, timeout_seconds=args.timeout_seconds)
@@ -254,7 +267,7 @@ def main() -> None:
         if args.action == "exchange":
             raise SystemExit(asyncio.run(_manual_exchange(settings)))
         raise SystemExit(asyncio.run(_logout(settings, local_only=args.local_only)))
-    except OuraMcpError as exc:
+    except OuraDataError as exc:
         print(str(exc), file=sys.stderr)
         raise SystemExit(2) from None
 
