@@ -69,8 +69,6 @@ class DateRangeQuery(PaginatedQuery):
             raise ValueError("end_date must be on or after start_date")
         if (self.end_date - self.start_date).days + 1 > MAX_DATE_RANGE_DAYS:
             raise ValueError(f"date ranges may include at most {MAX_DATE_RANGE_DAYS} days")
-        if self.end_date > date.today():
-            raise ValueError("future dates are not allowed")
         return self
 
 

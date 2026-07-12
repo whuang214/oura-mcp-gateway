@@ -153,6 +153,7 @@ def test_status_and_capabilities_are_sanitized(
 
     assert status["provider"]["connected"] is False
     assert status["process_id"] == os.getpid()
+    assert status["home_date"] == "2026-07-11"
     assert "gateway_token" not in repr(status)
     assert "client_secret" not in repr(status)
     spo2 = next(item for item in capabilities if item["resource"] == "daily_spo2")

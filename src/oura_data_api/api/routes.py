@@ -134,6 +134,8 @@ def _parameters(query: Any, *, extra: Mapping[str, Any] | None = None) -> dict[s
 
 
 def _service_query(request: Request, query: Any, *, extra: Mapping[str, Any] | None = None) -> ServiceQuery:
+    if isinstance(query, DateRangeQuery):
+        _ensure_day_is_not_future(query.end_date, request)
     parameters = _parameters(query, extra=extra)
     cursor = getattr(query, "cursor", None)
     continuation = None
@@ -189,8 +191,18 @@ def _envelope(
     )
 
 
-def _ensure_day_is_not_future(day: date) -> None:
-    if day > date.today():
+def _request_today(request: Request) -> date:
+    settings = request.app.state.settings
+    configured_today = getattr(settings, "today", None)
+    if callable(configured_today):
+        value = configured_today()
+        if isinstance(value, date):
+            return value
+    return date.today()
+
+
+def _ensure_day_is_not_future(day: date, request: Request) -> None:
+    if day > _request_today(request):
         raise APIProblem(
             status=400,
             code="future_date_not_allowed",
@@ -487,7 +499,7 @@ def build_protected_router() -> APIRouter:
         query: Annotated[CompositeDayQuery, Query()],
         service: Annotated[APIService, Depends(get_service)],
     ) -> SuccessEnvelope:
-        _ensure_day_is_not_future(day)
+        _ensure_day_is_not_future(day, request)
         result = await invoke(service.composite_day, day.isoformat(), query.include_sections)
         return _envelope(request, result, query=query)
 
@@ -528,7 +540,7 @@ def build_protected_router() -> APIRouter:
         _query: Annotated[EmptyQuery, Query()],
         service: Annotated[APIService, Depends(get_service)],
     ) -> SuccessEnvelope:
-        _ensure_day_is_not_future(day)
+        _ensure_day_is_not_future(day, request)
         return _envelope(request, await invoke(service.daily_signal, day.isoformat()))
 
     @router.get("/analytics/weekly-trends", response_model=SuccessEnvelope, responses=PROBLEM_RESPONSES, tags=["analytics"])

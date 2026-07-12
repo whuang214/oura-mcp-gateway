@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import os
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 from typing import Any
 
 import pytest
@@ -170,13 +170,42 @@ def test_unknown_query_parameters_are_rejected_with_problem_json(client: TestCli
     [
         "start_date=2026-07-02&end_date=2026-07-01",
         "start_date=2026-01-01&end_date=2026-04-01",
-        f"start_date={date.today() + timedelta(days=1)}&end_date={date.today() + timedelta(days=1)}",
     ],
 )
 def test_date_ranges_are_strictly_bounded(client: TestClient, query: str) -> None:
     response = client.get(f"/api/v1/daily/activity?{query}", headers=AUTH)
     assert response.status_code == 400
     assert response.json()["code"] == "request_validation_failed"
+
+
+def test_future_dates_use_injected_home_date_for_ranges_and_single_days(
+    service: FakeService,
+) -> None:
+    @dataclass
+    class Settings:
+        gateway_token: str = TOKEN
+
+        def today(self) -> date:
+            return date(2026, 7, 10)
+
+    client = TestClient(
+        create_app(Settings(), service=service, cursor_secret=b"t" * 32),
+        raise_server_exceptions=False,
+    )
+
+    current_range = client.get(
+        "/api/v1/daily/activity?start_date=2026-07-10&end_date=2026-07-10",
+        headers=AUTH,
+    )
+    future_range = client.get(
+        "/api/v1/daily/activity?start_date=2026-07-10&end_date=2026-07-11",
+        headers=AUTH,
+    )
+    future_day = client.get("/api/v1/days/2026-07-11", headers=AUTH)
+
+    assert current_range.status_code == 200
+    assert future_range.status_code == future_day.status_code == 400
+    assert future_range.json()["code"] == future_day.json()["code"] == "future_date_not_allowed"
 
 
 def test_collection_returns_empty_array_without_placeholder_rows_and_wraps_cursor(

@@ -640,6 +640,7 @@ class OuraDataService:
                 "granted_scopes": granted_scopes,
             },
             "home_timezone": self.settings.home_timezone,
+            "home_date": self.settings.today().isoformat(),
         }
         return ServiceResult(data=data)
 

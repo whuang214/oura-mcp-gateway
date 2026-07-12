@@ -92,7 +92,8 @@ Time-series collections accept:
 - `cursor`: optional opaque continuation cursor.
 
 Date collections allow at most 90 inclusive days. Time-series ranges allow at
-most seven days and use a half-open interval. The server rejects future dates,
+most seven days and use a half-open interval. The server rejects future dates
+relative to the configured Oura home timezone,
 reversed or excessive ranges, invalid offsets, unknown parameters, and cursors
 issued for a different route or query.
 
@@ -102,7 +103,7 @@ issued for a different route or query.
 | --- | --- | --- |
 | `GET` | `/api/v1/health` | Bare liveness; no private diagnostics |
 | `GET` | `/api/v1/health/challenge` | Nonce/HMAC proof of the configured local gateway identity |
-| `GET` | `/api/v1/status` | Sanitized configuration, authorization, process identity, and freshness state |
+| `GET` | `/api/v1/status` | Sanitized configuration, authorization, process identity, home timezone/date, and freshness state |
 | `GET` | `/api/v1/capabilities` | Resources and their enabled/granted/available state |
 | `GET` | `/api/v1/profile` | Scope-controlled personal profile; opt-in because it is PII |
 | `POST` | `/api/v1/auth/authorizations` | Create a state-bound Oura authorization URL |
