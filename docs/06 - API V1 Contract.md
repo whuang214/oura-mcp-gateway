@@ -194,6 +194,7 @@ workout heart rate.
 | `GET /api/v1/days` | Bounded composite days with requested sections and explicit per-section coverage |
 | `GET /api/v1/days/{day}` | One composite canonical day |
 | `GET /api/v1/analytics/daily-signals` | Deterministic daily facts plus prior-only baseline features |
+| `GET /api/v1/analytics/daily-coverage` | Audit-only status row for every requested day, including No Data and Sync Error |
 | `GET /api/v1/analytics/daily-signals/{day}` | One deterministic daily signal record |
 | `GET /api/v1/analytics/weekly-trends` | Coverage-aware observed weekly summaries |
 

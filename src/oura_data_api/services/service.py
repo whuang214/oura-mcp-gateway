@@ -521,6 +521,46 @@ class OuraDataService:
             fetched_at=result.fetched_at,
         )
 
+    async def daily_coverage(self, query: ServiceQuery) -> ServiceResult:
+        """Return one audit-only coverage classification per requested day."""
+
+        from ..analytics import build_daily_coverage
+
+        self.settings.validate_for_provider()
+        start_date = _as_date(query.parameters.get("start_date"), name="start_date")
+        end_date = _as_date(query.parameters.get("end_date"), name="end_date")
+        resources, outcomes, warnings = await self._fetch_many(
+            ANALYTICS_RESOURCES,
+            start_date,
+            end_date,
+        )
+        coverage = build_daily_coverage(
+            resources,
+            start_date=start_date,
+            end_date=end_date,
+            today=self.settings.today(),
+            outcomes_by_resource=outcomes,
+        )
+        data = [item.as_dict() for item in coverage]
+        offset = 0
+        if query.continuation is not None:
+            _token, offset = _continuation(query.continuation)
+        selected, continuation = _slice_page(
+            data,
+            limit=int(query.parameters.get("limit", 100)),
+            offset=offset,
+            provider_token=None,
+            next_provider_token=None,
+        )
+        now = datetime.now(UTC)
+        return ServiceResult(
+            data=selected,
+            warnings=warnings,
+            continuation=continuation,
+            retrieved_at=now,
+            fetched_at=now,
+        )
+
     async def weekly_trends(self, query: ServiceQuery) -> ServiceResult:
         from ..analytics import build_daily_coverage, build_daily_signals, build_weekly_trends
 

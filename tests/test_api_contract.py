@@ -64,6 +64,9 @@ class FakeService:
     def daily_signals(self, query: ServiceQuery) -> ServiceResult:
         return self._result("daily_signals", query)
 
+    def daily_coverage(self, query: ServiceQuery) -> ServiceResult:
+        return self._result("daily_coverage", query)
+
     def daily_signal(self, day: str) -> ServiceResult:
         return self._result("daily_signal", day)
 

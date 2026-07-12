@@ -54,6 +54,29 @@ async def test_collection_is_canonical_and_cursor_safe(
 
 
 @pytest.mark.anyio
+async def test_daily_coverage_returns_audit_rows_without_consumer_placeholders(
+    fixture_dir: Path, tmp_path: Path
+) -> None:
+    service = OuraDataService(_settings(fixture_dir, tmp_path))
+    result = await service.daily_coverage(
+        ServiceQuery(
+            parameters={
+                "start_date": "2026-07-07",
+                "end_date": "2026-07-11",
+                "limit": 100,
+            }
+        )
+    )
+
+    by_day = {row["day"]: row for row in result.data}
+    assert len(by_day) == 5
+    assert by_day["2026-07-07"]["status"] == "No Data"
+    assert by_day["2026-07-07"]["core_coverage"] == "0/4"
+    assert by_day["2026-07-11"]["status"] == "Provisional"
+    assert by_day["2026-07-11"]["provisional"] is True
+
+
+@pytest.mark.anyio
 async def test_workout_document_has_explicit_units(
     fixture_dir: Path, tmp_path: Path
 ) -> None:

@@ -502,6 +502,21 @@ def build_protected_router() -> APIRouter:
         return _envelope(request, result, query=query, parameters=service_query.parameters)
 
     @router.get(
+        "/analytics/daily-coverage",
+        response_model=SuccessEnvelope,
+        responses=PROBLEM_RESPONSES,
+        tags=["analytics", "audit"],
+    )
+    async def daily_coverage(
+        request: Request,
+        query: Annotated[DateRangeQuery, Query()],
+        service: Annotated[APIService, Depends(get_service)],
+    ) -> SuccessEnvelope:
+        service_query = _service_query(request, query)
+        result = await invoke(service.daily_coverage, service_query)
+        return _envelope(request, result, query=query, parameters=service_query.parameters)
+
+    @router.get(
         "/analytics/daily-signals/{day}",
         response_model=SuccessEnvelope,
         responses=PROBLEM_RESPONSES,
