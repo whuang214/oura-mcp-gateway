@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import date
 from pathlib import Path
 
@@ -128,6 +129,7 @@ def test_status_and_capabilities_are_sanitized(
     capabilities = service.capabilities().data
 
     assert status["provider"]["connected"] is False
+    assert status["process_id"] == os.getpid()
     assert "gateway_token" not in repr(status)
     assert "client_secret" not in repr(status)
     spo2 = next(item for item in capabilities if item["resource"] == "daily_spo2")

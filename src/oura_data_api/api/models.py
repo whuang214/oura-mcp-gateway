@@ -43,6 +43,10 @@ class EmptyQuery(StrictModel):
     """Reject query parameters on routes that do not define any."""
 
 
+class HealthChallengeQuery(StrictModel):
+    nonce: str = Field(min_length=32, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
+
+
 class PaginatedQuery(StrictModel):
     limit: int = Field(default=100, ge=1, le=1000)
     cursor: str | None = Field(default=None, min_length=1, max_length=MAX_CURSOR_LENGTH)

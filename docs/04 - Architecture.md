@@ -118,6 +118,9 @@ Official references:
   library reuse independent of ambient process state.
 - Oura credentials and tokens never cross the API boundary.
 - The gateway bearer token is separate from Oura OAuth credentials.
+- A public nonce/HMAC challenge proves local gateway identity before a managed
+  MCP client sends its bearer token. Authenticated status includes the process
+  ID so concurrent starters claim and terminate only their own child.
 - Default binding is `127.0.0.1`; CORS is disabled and telemetry is off.
 - Non-loopback deployment requires explicit opt-in and HTTPS at the deployment
   boundary.

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import os
 from datetime import UTC, date, datetime
 from enum import Enum
 from typing import Annotated, Any, Mapping, cast
@@ -29,6 +32,7 @@ from .models import (
     EmptyBody,
     EmptyQuery,
     FreshnessMeta,
+    HealthChallengeQuery,
     OAuthCallbackQuery,
     ProblemDetails,
     ResponseMeta,
@@ -39,6 +43,7 @@ from .models import (
 )
 
 API_PREFIX = "/api/v1"
+HEALTH_CHALLENGE_CONTEXT = b"oura-data-api-v1-health:"
 
 STABLE_DATE_RESOURCES: Mapping[str, str] = {
     "/daily/activity": "daily_activity",
@@ -354,6 +359,40 @@ def build_public_router() -> APIRouter:
     @router.get("/health", response_model=SuccessEnvelope, responses=PROBLEM_RESPONSES, tags=["meta"])
     async def health(request: Request, _query: Annotated[EmptyQuery, Query()]) -> SuccessEnvelope:
         return _envelope(request, ServiceResult(data={"status": "ok"}))
+
+    @router.get(
+        "/health/challenge",
+        response_model=SuccessEnvelope,
+        responses=PROBLEM_RESPONSES,
+        tags=["meta"],
+    )
+    async def health_challenge(
+        request: Request,
+        query: Annotated[HealthChallengeQuery, Query()],
+    ) -> SuccessEnvelope:
+        gateway_token = request.app.state.gateway_token
+        if not isinstance(gateway_token, str) or not gateway_token:
+            raise APIProblem(
+                status=503,
+                code="gateway_identity_unavailable",
+                title="Gateway identity is unavailable",
+                detail="The local API gateway identity is not configured.",
+            )
+        proof = hmac.new(
+            gateway_token.encode("ascii"),
+            HEALTH_CHALLENGE_CONTEXT + query.nonce.encode("ascii"),
+            hashlib.sha256,
+        ).hexdigest()
+        return _envelope(
+            request,
+            ServiceResult(
+                data={
+                    "status": "ok",
+                    "process_id": os.getpid(),
+                    "challenge_response": proof,
+                }
+            ),
+        )
 
     @router.get("/auth/callback", response_model=SuccessEnvelope, responses=PROBLEM_RESPONSES, tags=["authorization"])
     async def oauth_callback(

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
+import os
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
@@ -97,6 +100,31 @@ def client(service: FakeService) -> TestClient:
         create_app(service=service, gateway_token=TOKEN, cursor_secret=b"c" * 32),
         raise_server_exceptions=False,
     )
+
+
+def test_public_health_challenge_proves_gateway_identity_without_bearer(
+    client: TestClient,
+) -> None:
+    nonce = "n" * 32
+    response = client.get("/api/v1/health/challenge", params={"nonce": nonce})
+
+    assert response.status_code == 200
+    assert response.request.headers.get("authorization") is None
+    data = response.json()["data"]
+    expected = hmac.new(
+        TOKEN.encode("ascii"),
+        b"oura-data-api-v1-health:" + nonce.encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    assert data == {
+        "status": "ok",
+        "process_id": os.getpid(),
+        "challenge_response": expected,
+    }
+    assert client.get(
+        "/api/v1/health/challenge",
+        params={"nonce": nonce, "unknown": "rejected"},
+    ).status_code == 400
 
 
 def test_health_requires_no_configuration_and_disables_caching() -> None:

@@ -101,7 +101,8 @@ issued for a different route or query.
 | Method | Route | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/v1/health` | Bare liveness; no private diagnostics |
-| `GET` | `/api/v1/status` | Sanitized configuration, authorization, and freshness state |
+| `GET` | `/api/v1/health/challenge` | Nonce/HMAC proof of the configured local gateway identity |
+| `GET` | `/api/v1/status` | Sanitized configuration, authorization, process identity, and freshness state |
 | `GET` | `/api/v1/capabilities` | Resources and their enabled/granted/available state |
 | `GET` | `/api/v1/profile` | Scope-controlled personal profile; opt-in because it is PII |
 | `POST` | `/api/v1/auth/authorizations` | Create a state-bound Oura authorization URL |

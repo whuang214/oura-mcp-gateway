@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from collections.abc import Mapping, Sequence
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
@@ -586,6 +587,7 @@ class OuraDataService:
         data = {
             "service": "oura-data-api",
             "api_version": "1",
+            "process_id": os.getpid(),
             "mode": self.settings.mode,
             "configuration": "configured",
             "provider": {
