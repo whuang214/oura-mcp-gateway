@@ -1,109 +1,104 @@
-# Oura MCP Gateway
+# Oura Data API
 
-A local, read-only [Model Context Protocol](https://modelcontextprotocol.io/) server for the Oura API v2. It
-lets any MCP client — such as Claude Desktop or Claude Code — pull your sleep, readiness, activity, workout,
-session, stress, and optional SpO2 data as clean, analysis-ready records.
+A self-hosted, read-only JSON API for your personal Oura data.
 
-Everything runs on your machine. Your credentials and tokens are stored locally and sent only to Oura's
-official endpoints. The server never writes your data anywhere.
+The project exposes a stable `/api/v1` contract for sleep, readiness, activity,
+stress, workouts, sessions, heart-rate data, and deterministic recovery trends.
+It uses the latest officially supported Oura provider API behind an internal
+adapter, so provider changes do not leak into the public project contract.
+
+Your Oura credentials and health data stay on your machine. The API does not
+write to Google Sheets or include an MCP server; those are separate optional
+consumers.
 
 ## Quick start
 
-Requirements: Python 3.11–3.14, [Git](https://git-scm.com/), and
-[uv](https://docs.astral.sh/uv/getting-started/installation/) (a Python package manager — it sets up
-everything with one command).
+Requirements: Python 3.11–3.14 and Git. Native ARM64 Python is recommended on
+Windows ARM64.
 
-```bash
-git clone https://github.com/whuang214/oura-mcp-gateway.git
-cd oura-mcp-gateway
-cp .env.example .env        # PowerShell: Copy-Item .env.example .env
-uv sync --frozen
+```powershell
+git clone https://github.com/whuang214/oura-data-api.git
+cd oura-data-api
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e .
+Copy-Item .env.example .env
 ```
 
-Then open `.env` and fill in the two blank lines that are already there — that is all it requires:
+On macOS or Linux, activate with `source .venv/bin/activate`.
 
-```dotenv
-OURA_CLIENT_ID=
-OURA_CLIENT_SECRET=
+Open `.env` and add your own Oura application credentials and a private gateway
+bearer token. Runtime configuration comes only from that file; Windows and shell
+environment variables are ignored.
+
+Create an Oura application at
+[Oura API Applications](https://cloud.ouraring.com/oauth/applications), then
+authorize it locally:
+
+```powershell
+oura-oauth authorize
 ```
 
-Everything else is optional; the template's `OURA_HOME_TIMEZONE` is worth setting so daily boundaries match
-your clock.
+Start the API:
 
-Don't have credentials yet? Create a free application at
-[Oura API Applications](https://cloud.ouraring.com/oauth/applications) (takes a couple of minutes — the
-[authentication guide](docs/authentication.md) walks through the form field by field), or add
-`OURA_MODE=fixture` to `.env` to try the server with built-in sample data and no account at all.
-
-Finally, authorize with your Oura account (skip this in fixture mode):
-
-```bash
-uv run oura-oauth authorize
+```powershell
+oura-api
 ```
 
-A browser window opens, you log in to Oura, and tokens are saved locally. Done.
+The default local address is `http://127.0.0.1:8766`. Check liveness with:
 
-## Connect an MCP client
-
-The server speaks stdio MCP. Point your client at the project's Python with the repository as the working
-directory. For Claude Desktop, add this to `claude_desktop_config.json` (adjust the paths to your clone):
-
-```json
-{
-  "mcpServers": {
-    "oura": {
-      "command": "C:\\path\\to\\oura-mcp-gateway\\.venv\\Scripts\\python.exe",
-      "args": ["-m", "oura_mcp.server"],
-      "cwd": "C:\\path\\to\\oura-mcp-gateway"
-    }
-  }
-}
+```powershell
+curl.exe http://127.0.0.1:8766/api/v1/health
 ```
 
-On macOS or Linux, use `.venv/bin/python` as the command. Any other MCP client works with the same three
-settings — command, args, and working directory. The working directory matters: it is where the server finds
-your `.env`. (No working-directory option in your client? [Getting started](docs/getting-started.md) shows a
-shell-launcher fallback.) Restart the client, confirm the `oura` server appears, then ask something like:
+All health-data routes require the separate gateway bearer token. Never paste
+that token, Oura credentials, OAuth callback URLs, or personal health output
+into source code, issues, screenshots, or chat.
 
-> Check my Oura service status, then sync my recent daily data.
+## What you can query
 
-See [Getting started](docs/getting-started.md) for other clients and troubleshooting.
+- Granular daily sleep, readiness, activity, stress, SpO2, and heart-health
+  resources
+- Detailed sleep periods and explicitly requested sample series
+- Heart-rate and ring-battery time series
+- Workouts, sessions, enhanced tags, rest mode, and ring metadata
+- Composite days
+- Deterministic daily signals and coverage-aware weekly trends
 
-## Use your real Oura data
-
-The two-minute version of [the authentication guide](docs/authentication.md):
-
-1. Create an application at [Oura API Applications](https://cloud.ouraring.com/oauth/applications).
-2. Register exactly `http://localhost:8765/callback` as its redirect URI.
-3. Paste the generated client ID and secret into `.env`.
-4. Run `uv run oura-oauth authorize` and log in with your Oura account.
-5. Restart your MCP client.
-
-Never paste secrets, tokens, callback URLs, or health data into code, issues, screenshots, or chat.
-
-## MCP tools
-
-- `get_oura_service_status` — sanitized configuration, authorization, and scope diagnostics. Call it first.
-- `sync_oura_daily_data` — retrieves a bounded date range and returns normalized records plus an
-  analysis-ready transformation. Read-only, with paging for large backfills.
-
-See the [tool reference](docs/mcp-tools.md) for inputs, paging, statuses, and the full output contract.
+Missing dates are omitted rather than replaced with zero-valued placeholders.
+Active and workout calories remain context-only fields and never become a
+nutrition target.
 
 ## Documentation
 
-Start at the [documentation index](docs/README.md):
+Read the numbered guides in order, beginning with the
+[documentation index](<docs/00 - Documentation Index.md>).
 
-- [Getting started](docs/getting-started.md)
-- [Authentication](docs/authentication.md)
-- [Configuration](docs/configuration.md)
-- [MCP tools](docs/mcp-tools.md)
-- [Data contract](docs/data-contract.md)
-- [Architecture](docs/architecture.md)
-- [Development](docs/development.md)
+The most important references are:
+
+- [Getting started](<docs/01 - Getting Started.md>)
+- [Authentication](<docs/02 - Authentication.md>)
+- [Configuration](<docs/03 - Configuration.md>)
+- [API V1 contract](<docs/06 - API V1 Contract.md>)
+- [Data contract](<docs/07 - Data Contract.md>)
+
+## Development
+
+Create the virtual environment as above, then install the development extras:
+
+```powershell
+python -m pip install -e ".[dev]"
+python -m pytest
+python -m ruff check .
+python -m mypy
+```
+
+All validation is local; this repository intentionally has no hosted CI.
 
 ## License and policies
 
-Licensed under the [MIT License](LICENSE). Oura metrics are wellness data, not medical advice.
+Licensed under the [MIT License](LICENSE). Oura metrics are wellness data, not
+medical advice. This project is not affiliated with or endorsed by Oura.
 
 - [Privacy](PRIVACY.md)
 - [Terms](TERMS.md)

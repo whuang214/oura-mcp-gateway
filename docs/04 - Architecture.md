@@ -129,7 +129,8 @@ Official references:
 ### Google Sheets
 
 The desktop `oura-sync` skill calls deterministic API endpoints and writes only
-the separate private workbook defined by [the Sheet contract](sheet-contract.md).
+the separate private workbook defined by
+[the Sheet contract](<08 - Dedicated Oura Workbook Contract.md>).
 It hard-denies the Master Nutrition workbook ID and performs exact readback
 validation before advancing sync state.
 
@@ -144,7 +145,7 @@ logic.
 The web skill cannot depend on localhost or desktop MCP. It reads the Master
 Nutrition workbook and dedicated Oura workbook independently, joins exact dates
 in memory, and treats Oura as optional supporting evidence. See the
-[web consumer handoff](web-consumer-handoff.md).
+[web consumer handoff](<09 - Web Consumer Handoff.md>).
 
 ## Reliability invariants
 
@@ -162,5 +163,6 @@ in memory, and treats Oura as optional supporting evidence. See the
 
 Commit `6db36ba` is the validated pre-API structure checkpoint. The runtime on
 that commit is still the legacy MCP server. The staged work and exit gates are
-tracked in [the implementation plan](implementation-plan.md); documentation may
+tracked in [the implementation plan](<11 - Implementation Plan.md>);
+documentation may
 describe the approved target before the runtime cutover is complete.

@@ -41,4 +41,4 @@ out in the MIT License.
 ## Changes and contact
 
 Changes will be published in this repository with an updated effective date. For non-sensitive questions, open an issue
-at <https://github.com/whuang214/oura-mcp-gateway/issues>. Never post secrets or personal health data publicly.
+at <https://github.com/whuang214/oura-data-api/issues>. Never post secrets or personal health data publicly.

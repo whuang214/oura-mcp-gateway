@@ -219,4 +219,5 @@ not reimplement provider calculations or AI inference.
 The web nutrition coach reads `Daily Signals` and `Weekly Trends` by default and
 `Events` only when event details are relevant. It never reads `_Sync Ledger`
 during ordinary coaching, never writes Oura data, and never creates
-cross-workbook formulas. See [Web consumer handoff](web-consumer-handoff.md).
+cross-workbook formulas. See
+[Web consumer handoff](<09 - Web Consumer Handoff.md>).

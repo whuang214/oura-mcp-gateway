@@ -4,7 +4,7 @@ Prepared: 2026-07-12
 
 ## Intended outcome
 
-Refactor the current `oura-mcp-gateway` repository into a reusable,
+Refactor the current repository into a reusable,
 self-hosted **Oura Data API V1** that returns typed JSON. Move MCP and Google
 Sheets behavior into separate consumers. Delete and recreate the installed
 `oura-sync` Codex skill so its only job is to materialize curated API V1 data
@@ -14,7 +14,7 @@ No implementation begins until this plan is approved.
 
 ## Confirmed current state
 
-- The repository is at `C:\Users\whuan\Desktop\GitHub\oura-mcp-gateway`.
+- The repository is at `C:\Users\whuan\Desktop\GitHub\oura-data-api`.
 - `main` is at `5d21fb5` and tracks `origin/main`.
 - The user has an uncommitted file-structure refactor affecting 36 files
   (approximately 149 insertions and 2,409 deletions). Preserve it and checkpoint

@@ -5,7 +5,8 @@ Feature logic: `1.0.0`
 
 This document defines canonical model semantics shared by granular API routes,
 composite days, deterministic analytics, and the dedicated Oura workbook. The
-HTTP route/envelope contract is in [API V1 contract](api-contract.md).
+HTTP route/envelope contract is in
+[API V1 contract](<06 - API V1 Contract.md>).
 
 ## Canonical invariants
 

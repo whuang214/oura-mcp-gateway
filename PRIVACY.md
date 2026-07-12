@@ -36,7 +36,7 @@ responsible for securing their device, project directory, backups, and MCP host.
 
 The project maintainer does not receive or retain a user's Oura data through this software. Locally stored OAuth tokens
 remain until the user deletes the configured token file. A user can also revoke the application's access from their
-Oura account. `uv run oura-oauth logout` attempts remote revocation and then deletes local authorization; a
+Oura account. `oura-oauth logout` attempts remote revocation and then deletes local authorization; a
 `--local-only` fallback requires the user to revoke the grant manually in Oura. Data copied by an MCP client must be
 deleted through that client or its destination.
 
@@ -49,5 +49,5 @@ deliberately operating a trusted test environment.
 ## Changes and questions
 
 Material changes will be published in this repository with an updated effective date. For non-sensitive questions,
-open an issue at <https://github.com/whuang214/oura-mcp-gateway/issues>. Do not include credentials, tokens, health data,
+open an issue at <https://github.com/whuang214/oura-data-api/issues>. Do not include credentials, tokens, health data,
 or other sensitive information in an issue.

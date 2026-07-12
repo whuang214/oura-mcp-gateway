@@ -9,19 +9,18 @@ DOCS = ROOT / "docs"
 LOCAL_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 
 EXPECTED_TECHNICAL_DOCS = {
-    "README.md",
-    "api-contract.md",
-    "architecture.md",
-    "authentication.md",
-    "configuration.md",
-    "data-contract.md",
-    "development.md",
-    "getting-started.md",
-    "implementation-plan.md",
-    "mcp-tools.md",
-    "oura-upstream-map.md",
-    "sheet-contract.md",
-    "web-consumer-handoff.md",
+    "00 - Documentation Index.md",
+    "01 - Getting Started.md",
+    "02 - Authentication.md",
+    "03 - Configuration.md",
+    "04 - Architecture.md",
+    "05 - Oura Upstream Map.md",
+    "06 - API V1 Contract.md",
+    "07 - Data Contract.md",
+    "08 - Dedicated Oura Workbook Contract.md",
+    "09 - Web Consumer Handoff.md",
+    "10 - Development.md",
+    "11 - Implementation Plan.md",
 }
 
 
@@ -47,7 +46,8 @@ def _link_destination(document: Path, raw_target: str) -> Path | None:
     target = raw_target.strip()
     if target.startswith("<") and target.endswith(">"):
         target = target[1:-1]
-    target = target.split(maxsplit=1)[0]
+    else:
+        target = target.split(maxsplit=1)[0]
     if not target or target.startswith("#"):
         return None
     parsed = urlsplit(target)
@@ -93,8 +93,7 @@ def test_readme_stays_focused_on_the_user_path() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert len(readme.splitlines()) <= 150
     assert "## Quick start" in readme
-    assert "## Connect an MCP client" in readme
-    assert "## Use your real Oura data" in readme
+    assert "## What you can query" in readme
+    assert "## Documentation" in readme
     assert "## Research basis" not in readme
-    assert "Codex setup" not in readme
-    assert "Google Sheets" not in readme
+    assert "Connect an MCP client" not in readme
