@@ -10,13 +10,18 @@ LOCAL_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 
 EXPECTED_TECHNICAL_DOCS = {
     "README.md",
+    "api-contract.md",
     "architecture.md",
     "authentication.md",
     "configuration.md",
     "data-contract.md",
     "development.md",
     "getting-started.md",
+    "implementation-plan.md",
     "mcp-tools.md",
+    "oura-upstream-map.md",
+    "sheet-contract.md",
+    "web-consumer-handoff.md",
 }
 
 
