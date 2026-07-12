@@ -33,7 +33,6 @@ Homepage = "https://github.com/whuang214/oura-mcp-gateway"
 Issues = "https://github.com/whuang214/oura-mcp-gateway/issues"
 Privacy = "https://github.com/whuang214/oura-mcp-gateway/blob/main/PRIVACY.md"
 Repository = "https://github.com/whuang214/oura-mcp-gateway"
-Security = "https://github.com/whuang214/oura-mcp-gateway/blob/main/SECURITY.md"
 Terms = "https://github.com/whuang214/oura-mcp-gateway/blob/main/TERMS.md"
 
 [project.scripts]
@@ -64,7 +63,6 @@ exclude = [
   "/docs/**/*verification*",
   "/docs/private",
   "/private-results",
-  "/integrations/codex/oura-sync/references/local-config.md",
   "**/tokens.json*",
   "**/*.log",
 ]

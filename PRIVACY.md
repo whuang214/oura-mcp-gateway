@@ -23,8 +23,7 @@ the local MCP client that made the call. The gateway does not contain advertisin
 data, and does not independently upload Oura data to a developer-operated service.
 
 The MCP client and any downstream tools determine what happens after the gateway returns data. Users should review the
-privacy practices of those products before connecting them. This repository's server does not authenticate to Google
-or write Google Sheets itself.
+privacy practices of those products before connecting them.
 
 ## Local storage
 

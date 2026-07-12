@@ -13,7 +13,6 @@ private-results/
 *.egg-info/
 .env
 .private/
-integrations/codex/oura-sync/references/local-config.md
 *.log
 tokens.json
 tokens.json.*

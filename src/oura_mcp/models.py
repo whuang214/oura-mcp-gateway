@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from enum import StrEnum
-from typing import Any
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
@@ -127,7 +126,7 @@ class SectionError(StrictModel):
 
 
 class ExistingCoverage(StrictModel):
-    """One existing destination row, supplied by the desktop sync skill.
+    """One existing destination row, supplied by the MCP caller.
 
     ``errors`` is optional for compatibility with older rows. When supplied,
     planning retries only failures explicitly marked retryable. Source IDs are
@@ -233,7 +232,7 @@ class DailyRecord(StrictModel):
 
 
 class CuratedDailyRecord(StrictModel):
-    """Scalar, human-readable v2 record for the web nutrition consumer."""
+    """Scalar, human-readable v2 record for downstream analysis."""
 
     effective_date: date
     status: CuratedStatus
@@ -423,17 +422,3 @@ class OAuthTokenSet(StrictModel):
     refresh_token: str | None = Field(default=None, repr=False)
     scope: str | None = None
     obtained_at: datetime
-
-
-class ReconciliationAction(StrictModel):
-    effective_date: date
-    action: str
-    reason: str
-
-
-class ReconciliationResult(StrictModel):
-    """Pure Sheet-agnostic upsert output used by the desktop skill/tests."""
-
-    rows: list[dict[str, Any]]
-    actions: list[ReconciliationAction]
-    duplicate_dates_removed: list[date]

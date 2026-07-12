@@ -23,9 +23,9 @@ Do not rely on it for emergencies or safety-critical decisions.
 
 ## Third-party services
 
-Oura and any MCP host, AI provider, spreadsheet, or other connected destination are independent third parties with
-their own terms, availability, security, and privacy practices. The project maintainer does not control those services
-and is not responsible for their behavior or changes to their APIs.
+Oura and any MCP host, AI provider, or other connected destination are independent third parties with their own
+terms, availability, security, and privacy practices. The project maintainer does not control those services and is
+not responsible for their behavior or changes to their APIs.
 
 ## Security and availability
 

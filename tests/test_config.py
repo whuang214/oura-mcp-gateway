@@ -54,6 +54,19 @@ def test_project_env_is_the_only_configuration_source(
     assert settings.credential_source == "oauth_authorization_required"
 
 
+def test_minimal_env_defaults_to_live_with_default_redirect(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    _write_env(tmp_path, "OURA_CLIENT_ID=id\nOURA_CLIENT_SECRET=secret\n")
+
+    settings = Settings.from_env()
+
+    assert settings.mode == "live"
+    assert settings.redirect_uri == config_module.DEFAULT_REDIRECT_URI
+    assert settings.credential_source == "oauth_authorization_required"
+
+
 def test_process_environment_cannot_replace_a_missing_project_env(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -90,9 +103,10 @@ def test_checked_in_env_example_contains_no_credentials() -> None:
         for key, value in (line.split("=", 1),)
     }
 
-    assert values["OURA_ACCESS_TOKEN"] == ""
     assert values["OURA_CLIENT_ID"] == ""
     assert values["OURA_CLIENT_SECRET"] == ""
+    for key in ("OURA_ACCESS_TOKEN", "OURA_CLIENT_ID", "OURA_CLIENT_SECRET"):
+        assert values.get(key, "") == ""
 
 
 def test_project_env_is_hardened_before_values_are_loaded(tmp_path: Path) -> None:

@@ -10,18 +10,13 @@ LOCAL_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 
 EXPECTED_TECHNICAL_DOCS = {
     "README.md",
-    "development/testing.md",
-    "guides/authentication.md",
-    "guides/codex.md",
-    "guides/configuration.md",
-    "guides/getting-started.md",
-    "guides/google-sheets.md",
-    "oura-data-contract-v2.md",
-    "oura-v2-migration.md",
-    "operations/migration-v2.md",
-    "reference/architecture.md",
-    "reference/data-contract-v2.md",
-    "reference/mcp-tools.md",
+    "architecture.md",
+    "authentication.md",
+    "configuration.md",
+    "data-contract.md",
+    "development.md",
+    "getting-started.md",
+    "mcp-tools.md",
 }
 
 
@@ -29,14 +24,9 @@ def _markdown_files() -> list[Path]:
     root_documents = [
         ROOT / "README.md",
         ROOT / "PRIVACY.md",
-        ROOT / "SECURITY.md",
         ROOT / "TERMS.md",
     ]
-    return sorted(
-        root_documents
-        + _public_docs()
-        + list((ROOT / "integrations").rglob("*.md"))
-    )
+    return sorted(root_documents + _public_docs())
 
 
 def _public_docs() -> list[Path]:
@@ -98,6 +88,8 @@ def test_readme_stays_focused_on_the_user_path() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert len(readme.splitlines()) <= 150
     assert "## Quick start" in readme
-    assert "## Connect it to Codex" in readme
+    assert "## Connect an MCP client" in readme
     assert "## Use your real Oura data" in readme
     assert "## Research basis" not in readme
+    assert "Codex setup" not in readme
+    assert "Google Sheets" not in readme

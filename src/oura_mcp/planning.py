@@ -1,17 +1,14 @@
-"""Pure gap planning and destination reconciliation helpers."""
+"""Pure gap planning helpers."""
 
 from __future__ import annotations
 
 from datetime import date, timedelta
-from typing import Any, Iterable
+from typing import Iterable
 
 from .models import (
     CoverageStatus,
-    DailyRecord,
     DateRange,
     ExistingCoverage,
-    ReconciliationAction,
-    ReconciliationResult,
     SyncMode,
     SyncPlan,
 )
@@ -184,7 +181,7 @@ def build_sync_plan(
 
     # Incremental runs treat manual rows as covered. Explicit backfills may still
     # retrieve them so the caller can fill null objective fields while preserving
-    # manual values during reconciliation.
+    # manually entered values.
     if not explicit:
         target_dates -= skipped_manual
         refresh_dates -= skipped_manual
@@ -222,102 +219,4 @@ def build_sync_plan(
         continuation_start_date=(
             ordered_all_targets[len(ordered_targets)] if remaining_target_dates else None
         ),
-    )
-
-
-def _row_day(row: dict[str, Any]) -> date:
-    raw = row.get("effective_date", row.get("date"))
-    if isinstance(raw, date):
-        return raw
-    if isinstance(raw, str):
-        return date.fromisoformat(raw[:10])
-    raise ValueError("Every existing row must contain an effective_date or date")
-
-
-def _merge_source_ids(left: Any, right: Any) -> dict[str, list[str]]:
-    merged: dict[str, list[str]] = {}
-    for candidate in (left, right):
-        if not isinstance(candidate, dict):
-            continue
-        for section, values in candidate.items():
-            if not isinstance(values, list):
-                continue
-            merged.setdefault(str(section), [])
-            merged[str(section)].extend(str(value) for value in values if value is not None)
-    return {key: sorted(set(values)) for key, values in merged.items()}
-
-
-def reconcile_daily_records(
-    existing_rows: list[dict[str, Any]], incoming_records: list[DailyRecord]
-) -> ReconciliationResult:
-    """Perform a duplicate-safe, sorted, Sheet-independent upsert.
-
-    For ``Manually Entered`` rows, non-null existing values win. This helper does
-    not access Google; it gives the desktop skill deterministic rows to write and
-    reread.
-    """
-
-    canonical: dict[date, dict[str, Any]] = {}
-    duplicates: set[date] = set()
-    for original in existing_rows:
-        day = _row_day(original)
-        original_status = _normalized_status(
-            str(original.get("status", original.get("completeness_status", "")))
-        )
-        normalized = dict(original)
-        if original_status != "manually entered":
-            normalized["effective_date"] = day.isoformat()
-        if day in canonical:
-            duplicates.add(day)
-            prior = canonical[day]
-            prior_status = _normalized_status(
-                str(prior.get("status", prior.get("completeness_status", "")))
-            )
-            if prior_status == "manually entered":
-                # Exact preservation beats deduplication conflict merging.
-                continue
-            if original_status == "manually entered":
-                canonical[day] = dict(original)
-                continue
-            for key, value in normalized.items():
-                if value is not None:
-                    prior[key] = value
-            prior["source_ids"] = _merge_source_ids(prior.get("source_ids"), normalized.get("source_ids"))
-        else:
-            canonical[day] = normalized
-
-    actions: list[ReconciliationAction] = []
-    for record in incoming_records:
-        day = record.effective_date
-        incoming = record.model_dump(mode="json")
-        incoming["status"] = incoming["completeness_status"]
-        previous = canonical.get(day)
-        if previous is None:
-            canonical[day] = incoming
-            actions.append(ReconciliationAction(effective_date=day, action="insert", reason="date was absent"))
-            continue
-
-        status = _normalized_status(str(previous.get("status", previous.get("completeness_status", ""))))
-        if status == "manually entered":
-            actions.append(
-                ReconciliationAction(
-                    effective_date=day,
-                    action="skip_manual",
-                    reason="preserved the manually entered row byte-for-byte at the cell level",
-                )
-            )
-        elif previous == incoming or (
-            {key: value for key, value in previous.items() if key != "status"}
-            == {key: value for key, value in incoming.items() if key != "status"}
-        ):
-            actions.append(ReconciliationAction(effective_date=day, action="unchanged", reason="identical record"))
-        else:
-            canonical[day] = incoming
-            actions.append(ReconciliationAction(effective_date=day, action="update", reason="fresh Oura record"))
-
-    ordered_rows = [canonical[day] for day in sorted(canonical)]
-    return ReconciliationResult(
-        rows=ordered_rows,
-        actions=sorted(actions, key=lambda item: item.effective_date),
-        duplicate_dates_removed=sorted(duplicates),
     )

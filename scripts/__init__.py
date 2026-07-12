@@ -1,1 +1,1 @@
-"""Repository maintenance and local staging helpers."""
+"""Repository maintenance helpers (distribution privacy audit)."""

@@ -24,6 +24,7 @@ from .errors import ConfigurationError, ConfigurationFileMissingError
 DEFAULT_AUTHORIZE_URL = "https://cloud.ouraring.com/oauth/authorize"
 DEFAULT_TOKEN_URL = "https://api.ouraring.com/oauth/token"
 DEFAULT_API_BASE_URL = "https://api.ouraring.com/v2/usercollection"
+DEFAULT_REDIRECT_URI = "http://localhost:8765/callback"
 PROJECT_ENV_FILENAME = ".env"
 _ENV_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 _SUPPORTED_OURA_KEYS = frozenset(
@@ -348,7 +349,7 @@ class Settings:
     access_token: str | None = field(default=None, repr=False)
     client_id: str | None = field(default=None, repr=False)
     client_secret: str | None = field(default=None, repr=False)
-    redirect_uri: str | None = None
+    redirect_uri: str | None = DEFAULT_REDIRECT_URI
     token_file: Path = field(default_factory=_default_token_file, repr=False)
     authorize_url: str = DEFAULT_AUTHORIZE_URL
     token_url: str = DEFAULT_TOKEN_URL
@@ -397,7 +398,8 @@ class Settings:
             access_token=_value(values, "OURA_ACCESS_TOKEN"),
             client_id=_value(values, "OURA_CLIENT_ID"),
             client_secret=_value(values, "OURA_CLIENT_SECRET"),
-            redirect_uri=_value(values, "OURA_REDIRECT_URI"),
+            redirect_uri=_value(values, "OURA_REDIRECT_URI", DEFAULT_REDIRECT_URI)
+            or DEFAULT_REDIRECT_URI,
             token_file=(
                 _project_path(token_file_raw, project_dir=project_dir)
                 if token_file_raw
