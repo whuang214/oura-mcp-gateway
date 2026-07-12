@@ -1,9 +1,24 @@
 [project]
 name = "oura-mcp"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Read-only personal Oura API v2 MCP server for normalized daily recovery data"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Will Huang" }]
+keywords = ["mcp", "oura", "health-data", "model-context-protocol"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
 dependencies = [
   "httpx>=0.28.1,<1",
   "mcp==1.28.1",
@@ -12,14 +27,21 @@ dependencies = [
   "tzdata>=2025.2",
 ]
 
+[project.urls]
+Homepage = "https://github.com/whuang214/oura-mcp-gateway"
+Issues = "https://github.com/whuang214/oura-mcp-gateway/issues"
+Repository = "https://github.com/whuang214/oura-mcp-gateway"
+
 [project.scripts]
 oura-mcp = "oura_mcp.server:main"
 oura-oauth = "oura_mcp.oauth_cli:main"
 
 [dependency-groups]
 dev = [
-  "pytest>=8.4,<9",
+  "mypy>=1.16,<2",
+  "pytest>=9.0.3,<10",
   "pytest-cov>=6.2,<7",
+  "ruff>=0.12,<1",
 ]
 
 [build-system]
@@ -28,6 +50,20 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/oura_mcp"]
+
+[tool.hatch.build]
+exclude = [
+  "/.env",
+  "/.private",
+  "/dist",
+  "/docs/*verification*",
+  "/integrations/codex/oura-sync/references/local-config.md",
+  "**/tokens.json*",
+  "**/*.log",
+]
+
+[tool.hatch.version]
+path = "src/oura_mcp/__init__.py"
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"
@@ -38,5 +74,24 @@ branch = true
 source = ["oura_mcp"]
 
 [tool.coverage.report]
+fail_under = 75
 show_missing = true
 skip_covered = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+show_error_codes = true
+strict = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["ntsecuritycon", "win32api", "win32con", "win32security"]
+ignore_missing_imports = true

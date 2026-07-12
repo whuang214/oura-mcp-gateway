@@ -14,9 +14,10 @@ from typing import Any
 
 import httpx
 
-from .auth import AuthManager
+from . import __version__
+from .auth import AuthManager, validate_https_endpoint
 from .config import Settings
-from .errors import ApiError, AuthenticationError, FixtureError
+from .errors import ApiError, FixtureError
 
 ENDPOINTS = (
     "daily_sleep",
@@ -57,7 +58,12 @@ class FixtureCollectionClient:
     def __init__(self, fixture_dir: Path) -> None:
         self.fixture_dir = fixture_dir
 
-    async def fetch_collection(self, endpoint: str, start_date: date, end_date: date) -> list[dict[str, Any]]:
+    async def fetch_collection(
+        self,
+        endpoint: str,
+        start_date: date,
+        end_date: date,
+    ) -> list[dict[str, Any]]:
         path = self.fixture_dir / f"{endpoint}.json"
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -98,10 +104,13 @@ class OuraApiClient:
         self.settings = settings
         self.auth_manager = auth_manager or AuthManager(settings)
         self._owns_client = http_client is None
+        api_base_url = validate_https_endpoint(settings.api_base_url, label="OURA_API_BASE_URL")
         self.http_client = http_client or httpx.AsyncClient(
-            base_url=f"{settings.api_base_url.rstrip('/')}/",
+            base_url=f"{api_base_url.rstrip('/')}/",
             timeout=httpx.Timeout(settings.timeout_seconds),
-            headers={"Accept": "application/json", "User-Agent": "oura-mcp/0.1.0"},
+            follow_redirects=False,
+            trust_env=False,
+            headers={"Accept": "application/json", "User-Agent": f"oura-mcp/{__version__}"},
         )
         self.sleeper = sleeper
 
@@ -112,12 +121,26 @@ class OuraApiClient:
         if self._owns_client:
             await self.http_client.aclose()
 
-    async def fetch_collection(self, endpoint: str, start_date: date, end_date: date) -> list[dict[str, Any]]:
+    async def fetch_collection(
+        self,
+        endpoint: str,
+        start_date: date,
+        end_date: date,
+        *,
+        refresh_on_401: bool = True,
+    ) -> list[dict[str, Any]]:
         if endpoint not in ENDPOINTS:
             raise ValueError(f"Unsupported Oura collection: {endpoint}")
         records: list[dict[str, Any]] = []
         for chunk_start, chunk_end in chunk_date_range(start_date, end_date, self.settings.max_range_days):
-            records.extend(await self._fetch_chunk(endpoint, chunk_start, chunk_end))
+            records.extend(
+                await self._fetch_chunk(
+                    endpoint,
+                    chunk_start,
+                    chunk_end,
+                    refresh_on_401=refresh_on_401,
+                )
+            )
 
         # Oura source IDs are stable. A fallback key keeps malformed upstream
         # duplicates from inflating results without inventing an ID.
@@ -128,7 +151,14 @@ class OuraApiClient:
             deduplicated[key] = record
         return list(deduplicated.values())
 
-    async def _fetch_chunk(self, endpoint: str, start_date: date, end_date: date) -> list[dict[str, Any]]:
+    async def _fetch_chunk(
+        self,
+        endpoint: str,
+        start_date: date,
+        end_date: date,
+        *,
+        refresh_on_401: bool,
+    ) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         next_token: str | None = None
         seen_tokens: set[str] = set()
@@ -139,7 +169,7 @@ class OuraApiClient:
             }
             if next_token:
                 params["next_token"] = next_token
-            response = await self._request(endpoint, params)
+            response = await self._request(endpoint, params, refresh_on_401=refresh_on_401)
             try:
                 payload = response.json()
             except (json.JSONDecodeError, ValueError) as exc:
@@ -157,7 +187,13 @@ class OuraApiClient:
             seen_tokens.add(next_token)
         raise ApiError("Oura pagination exceeded the safety limit")
 
-    async def _request(self, endpoint: str, params: dict[str, str]) -> httpx.Response:
+    async def _request(
+        self,
+        endpoint: str,
+        params: dict[str, str],
+        *,
+        refresh_on_401: bool,
+    ) -> httpx.Response:
         attempt = 0
         forced_refresh_used = False
         while True:
@@ -168,7 +204,7 @@ class OuraApiClient:
                     params=params,
                     headers={"Authorization": f"Bearer {access_token}"},
                 )
-            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+            except httpx.TransportError as exc:
                 if attempt >= self.settings.max_retries:
                     raise ApiError("The Oura API could not be reached after retries") from exc
                 await self.sleeper(self._backoff_delay(attempt, None, None))
@@ -176,8 +212,17 @@ class OuraApiClient:
                 continue
 
             if response.status_code == 401:
+                if not refresh_on_401:
+                    raise ApiError(
+                        "Oura denied this collection; verify endpoint availability or granted scopes",
+                        status_code=401,
+                    )
                 if forced_refresh_used:
-                    raise AuthenticationError("Oura rejected the refreshed access token")
+                    raise ApiError(
+                        "Oura denied this collection after credential refresh; "
+                        "verify endpoint availability or granted scopes",
+                        status_code=401,
+                    )
                 await self.auth_manager.access_token(force_refresh=True, rejected_token=access_token)
                 forced_refresh_used = True
                 continue
@@ -219,7 +264,7 @@ class OuraApiClient:
                 reset_delay = -1.0
             if reset_delay >= 0:
                 return min(self.settings.max_retry_after_seconds, reset_delay)
-        return min(self.settings.max_retry_after_seconds, exponential)
+        return float(min(self.settings.max_retry_after_seconds, exponential))
 
     @staticmethod
     def _parse_retry_after(value: str) -> float | None:

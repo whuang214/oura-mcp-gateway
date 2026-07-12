@@ -30,6 +30,7 @@ def fixture_settings(fixture_dir: Path, tmp_path: Path) -> Settings:
         fixture_dir=fixture_dir,
         fixture_today=date(2026, 7, 11),
         token_file=tmp_path / "tokens.json",
+        enable_resilience=True,
     )
 
 

@@ -5,10 +5,10 @@ from pathlib import Path
 
 import httpx
 import pytest
+from conftest import live_settings
 
 from oura_mcp.client import OuraApiClient
-from oura_mcp.errors import ApiError, AuthenticationError
-from conftest import live_settings
+from oura_mcp.errors import ApiError, AuthenticationError, ConfigurationError
 
 
 class FakeAuthManager:
@@ -153,6 +153,51 @@ async def test_401_forces_one_refresh_then_retries(tmp_path: Path) -> None:
 
 
 @pytest.mark.anyio
+async def test_collection_401_after_refresh_is_isolated_as_endpoint_error(tmp_path: Path) -> None:
+    auth = FakeAuthManager()
+
+    def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(401, json={})
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler), base_url="https://api.ouraring.com/v2/usercollection/"
+    ) as http_client:
+        client = OuraApiClient(
+            live_settings(tmp_path), auth_manager=auth, http_client=http_client
+        )  # type: ignore[arg-type]
+        with pytest.raises(ApiError, match="denied this collection") as captured:
+            await client.fetch_collection("daily_resilience", date(2026, 7, 8), date(2026, 7, 8))
+
+    assert captured.value.status_code == 401
+    assert auth.forced_calls == 1
+
+
+@pytest.mark.anyio
+async def test_collection_401_can_be_isolated_without_rotating_token(tmp_path: Path) -> None:
+    auth = FakeAuthManager()
+
+    def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(401, json={})
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler), base_url="https://api.ouraring.com/v2/usercollection/"
+    ) as http_client:
+        client = OuraApiClient(
+            live_settings(tmp_path), auth_manager=auth, http_client=http_client
+        )  # type: ignore[arg-type]
+        with pytest.raises(ApiError) as captured:
+            await client.fetch_collection(
+                "daily_resilience",
+                date(2026, 7, 8),
+                date(2026, 7, 8),
+                refresh_on_401=False,
+            )
+
+    assert captured.value.status_code == 401
+    assert auth.forced_calls == 0
+
+
+@pytest.mark.anyio
 async def test_invalid_environment_token_is_not_refreshable(tmp_path: Path) -> None:
     def handler(_: httpx.Request) -> httpx.Response:
         return httpx.Response(401, json={})
@@ -182,3 +227,9 @@ async def test_403_is_nonretryable_section_permission_error(tmp_path: Path) -> N
             await client.fetch_collection("daily_resilience", date(2026, 7, 8), date(2026, 7, 8))
     assert caught.value.status_code == 403
     assert calls == 1
+
+
+def test_cleartext_api_base_is_rejected_before_a_bearer_client_is_created(tmp_path: Path) -> None:
+    settings = live_settings(tmp_path, api_base_url="http://api.ouraring.com/v2/usercollection")
+    with pytest.raises(ConfigurationError, match="HTTPS"):
+        OuraApiClient(settings)

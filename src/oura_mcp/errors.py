@@ -11,6 +11,10 @@ class ConfigurationError(OuraMcpError):
     """The service is not configured for the requested operation."""
 
 
+class ConfigurationFileMissingError(ConfigurationError):
+    """The required project ``.env`` file is absent."""
+
+
 class AuthenticationError(OuraMcpError):
     """Oura rejected or could not refresh the configured credentials."""
 
