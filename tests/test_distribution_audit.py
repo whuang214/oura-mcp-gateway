@@ -35,6 +35,12 @@ def test_distribution_audit_allows_blank_template(tmp_path: Path) -> None:
     safe = tmp_path / "safe.tar.gz"
     _archive(
         safe,
-        {"pkg/.env.example": b"OURA_CLIENT_SECRET=\nOURA_ACCESS_TOKEN=\n"},
+        {
+            "pkg/.env.example": b"OURA_CLIENT_SECRET=\nOURA_ACCESS_TOKEN=\n",
+            "pkg/README.md": (
+                b"OURA_CLIENT_SECRET=\n"
+                b"OURA_REDIRECT_URI=http://localhost:8765/callback\n"
+            ),
+        },
     )
     assert audit([safe]) == []

@@ -28,9 +28,13 @@ dependencies = [
 ]
 
 [project.urls]
+Documentation = "https://github.com/whuang214/oura-mcp-gateway/tree/main/docs"
 Homepage = "https://github.com/whuang214/oura-mcp-gateway"
 Issues = "https://github.com/whuang214/oura-mcp-gateway/issues"
+Privacy = "https://github.com/whuang214/oura-mcp-gateway/blob/main/PRIVACY.md"
 Repository = "https://github.com/whuang214/oura-mcp-gateway"
+Security = "https://github.com/whuang214/oura-mcp-gateway/blob/main/SECURITY.md"
+Terms = "https://github.com/whuang214/oura-mcp-gateway/blob/main/TERMS.md"
 
 [project.scripts]
 oura-mcp = "oura_mcp.server:main"
@@ -57,6 +61,9 @@ exclude = [
   "/.private",
   "/dist",
   "/docs/*verification*",
+  "/docs/**/*verification*",
+  "/docs/private",
+  "/private-results",
   "/integrations/codex/oura-sync/references/local-config.md",
   "**/tokens.json*",
   "**/*.log",

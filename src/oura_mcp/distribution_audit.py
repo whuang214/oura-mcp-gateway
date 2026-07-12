@@ -13,7 +13,7 @@ FORBIDDEN_NAMES = {".env", "tokens.json", "local-config.md"}
 FORBIDDEN_PARTS = {".private"}
 TEXT_SUFFIXES = {".env", ".json", ".md", ".toml", ".txt", ".yaml", ".yml"}
 SECRET_ASSIGNMENT = re.compile(
-    rb"OURA_(?:CLIENT_SECRET|ACCESS_TOKEN)\s*=\s*[^\s#\r\n]"
+    rb"OURA_(?:CLIENT_SECRET|ACCESS_TOKEN)[ \t]*=[ \t]*[^\s#\r\n]"
 )
 TOKEN_JSON = re.compile(rb'"(?:access_token|refresh_token)"\s*:\s*"[^"\s]+"')
 SHEET_LINK = re.compile(rb"docs\.google\.com/spreadsheets/d/[A-Za-z0-9_-]+")

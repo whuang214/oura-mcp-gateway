@@ -33,11 +33,7 @@ issue asking the maintainer to establish a private contact channel, without disc
 This security model is for one user running the gateway locally. Hosted, centrally managed, and multi-user OAuth
 deployments are explicitly unsupported and require a separate threat model and implementation.
 
-The loader reads exactly one file: `.env` in the MCP process working directory. It does not search parent directories,
-load `.env.example`, interpolate variables, or consult process environment variables. Values use `KEY=VALUE` syntax;
-single or double quotes may surround a literal value, but interpolation, escape processing, multiline values, inline
-comments, `export`, and duplicate keys are intentionally unsupported.
-Relative paths resolve from the `.env` directory; home-directory (`~`) expansion is intentionally unsupported.
-Before reading, the loader rejects links/reparse points and applies a private
-file mode: current user only on POSIX, or current user plus Local System on
-Windows.
+The loader reads exactly one project `.env` and ignores process environment variables. Before reading, it rejects
+links/reparse points and applies a private file mode: current user only on POSIX, or current user plus Local System on
+Windows. The full parser, path, and reload contract is documented in
+[Configuration](docs/guides/configuration.md).
