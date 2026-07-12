@@ -1,7 +1,11 @@
 # Dedicated Oura workbook contract
 
-Contract version: `1.0.0`
+Workbook contract version: `1.1.0`
 Workbook marker: `OURA_DATA_WORKBOOK_V1`
+
+The marker-row version is the workbook layout contract. Consumer-row
+`Contract Version` remains the API analytics/source contract (`1.0.0` at this
+release); these versions are intentionally independent.
 
 This contract is a materialized consumer view of Oura Data API V1. It belongs
 in a separate private Google workbook. It must never be created inside the
@@ -9,7 +13,7 @@ Master Nutrition workbook.
 
 ## Workbook identity and layout
 
-Proposed workbook title: **Will’s Oura Recovery & Performance**.
+Workbook title: **Will’s Oura Recovery & Performance**.
 
 Every tab uses:
 
@@ -17,7 +21,8 @@ Every tab uses:
   and a human-readable title;
 - row 2 for exact headers;
 - row 3 onward for data;
-- real Google Sheets date values such as `=DATE(2026,7,12)`;
+- numeric Google Sheets date values written with RAW semantics and formatted
+  as `yyyy-mm-dd`;
 - frozen headers, filters on visible tables, and stable key sorting.
 
 The writer refuses all changes when:
@@ -57,6 +62,8 @@ High Stress (hours) | High Recovery (hours) |
 Recovery Minus Stress (hours) | Stress Summary |
 SpO2 Average (%) | Breathing Disturbance Index |
 Workout Count | Workout Minutes | Workout Types |
+Workout Calories (kcal, context only) |
+Session Count | Session Minutes | Session Types |
 Sleep Baseline Median (hours) | Sleep Delta (hours) | Sleep Baseline N |
 HRV Baseline Median (ms) | HRV Delta (%) | HRV Baseline N |
 Lowest HR Baseline Median (bpm) | Lowest HR Delta (bpm) |
@@ -77,8 +84,8 @@ Rules:
   names below the API's documented attention threshold. It contains no prose.
 - `Warnings` is concise structured text for supplemental unavailability. It
   cannot downgrade otherwise complete core data.
-- Active calories are context only and must never be used as an eat-back or
-  nutrition-target field.
+- Active and workout calories are separate context-only values and must never
+  be used as eat-back or nutrition-target fields.
 
 ## Baselines
 
@@ -119,6 +126,8 @@ API Version | Feature Version | Contract Version
 Rules:
 
 - Aggregate only observed valid values and expose each denominator.
+- Do not materialize weekly No Data or Sync Error placeholders. Preserve those
+  outcomes in `_Sync Ledger`.
 - Do not extrapolate a partial week to seven days.
 - Stress/recovery totals are explicitly observed totals with coverage days.
 - Do not include a weekly wearable-calorie total or net-calorie value.
@@ -185,9 +194,13 @@ codes, authorization headers, and stack traces are forbidden.
 - Calories are displayed as half-up whole kcal and remain context only.
 - Missing is blank. Zero is written only from an explicit source zero or a
   documented successful-empty aggregate.
+- All consumer writes use RAW cell values so labels beginning with `=` remain
+  literal text rather than formulas.
 
-The deterministic row renderer owns these conversions. The Sheet skill does
-not reimplement provider calculations or AI inference.
+The deterministic row renderer owns these conversions and rejects missing
+keys, nested cells, malformed numeric values, incompatible versions, and
+finalized placeholder rows. The Sheet skill does not reimplement provider
+calculations or AI inference.
 
 ## Reconciliation
 

@@ -14,20 +14,23 @@ nutrition system of record and must never block ordinary nutrition logging.
 
 - The Oura-owned tabs were removed from **Will’s Master Nutrition Log –
   Calories, Protein & Performance**.
-- No separate Oura spreadsheet currently exists in Drive.
-- The existing local `oura-sync` skill still targets the removed five-tab
-  schema and will be replaced after the new API and workbook contract exist.
-- The current repository is being redesigned as **Oura Data API V1**. Its
-  public routes and schemas are V1; its private provider adapter uses the latest
-  officially supported Oura upstream API.
-- MCP will be a separate adapter project. The web skill must not depend on the
-  local MCP server or a localhost API that the web runtime cannot reach.
+- A separate private workbook named **Will’s Oura Recovery & Performance** now
+  exists with the four exact tabs below and workbook contract `1.1.0`. Its ID
+  belongs in private installed-skill configuration, never this public repo.
+- The replacement `$oura-sync` skill and separate `oura-mcp` adapter are staged
+  for final local validation and installed-skill cutover.
+- **Oura Data API V1** is implemented and locally tested. Its public routes and
+  schemas are V1; its private provider adapter uses the latest officially
+  supported Oura upstream API.
+- The web skill must not depend on desktop MCP or a localhost API that the web
+  runtime cannot reach.
 
 ## Target architecture
 
 ```text
 Oura Cloud
   -> self-hosted Oura Data API V1 (canonical JSON + deterministic analytics)
+  -> separate read-only Oura MCP adapter
   -> desktop oura-sync skill (materialization only)
   -> private Oura Google workbook
   -> web will-nutrition-coach skill (read-only consumer)
@@ -60,12 +63,12 @@ this workbook.
 
 ### Dedicated Oura workbook
 
-Proposed title: **Will’s Oura Recovery & Performance**.
+Title: **Will’s Oura Recovery & Performance**.
 
-The implementation will provide its final spreadsheet ID and contract version.
-Until then, treat both as unresolved configuration values; do not guess them.
-The installed web skill should also receive the configured local timezone
-(`America/Denver` for Will) and the accepted feature-logic version.
+The workbook ID is supplied privately to the installed web skill. Do not infer
+it from titles or place it in public source. The accepted workbook contract is
+`1.1.0`; the installed web skill should also receive the configured local
+timezone (`America/Denver` for Will) and feature-logic version `1.0.0`.
 
 The workbook contains four tabs:
 
@@ -89,11 +92,12 @@ Expected field groups:
 - average HRV, lowest sleeping heart rate, temperature deviation;
 - high-stress hours, high-recovery hours, recovery-minus-stress;
 - SpO2 and breathing-disturbance index when available;
-- steps, workout count, workout minutes, and workout types;
+- steps, workout count/minutes/types, workout calories marked context only,
+  and session count/minutes/types;
 - Oura contributor attention areas;
 - past-only baseline medians, deltas, observation counts, and baseline state;
 - structured warnings, last successful sync, API version, feature version, and
-  Sheet contract version.
+  API analytics/source contract version.
 
 Active and workout calories, if materialized, must be explicitly labeled
 **context only**. They are not nutrition expenditure targets.
@@ -116,8 +120,9 @@ Expected fields:
 - contributor attention frequency;
 - last sync and contract versions.
 
-Never extrapolate sparse weeks. Do not include a weekly wearable-calorie target
-or net-calorie recommendation.
+Never extrapolate sparse weeks. Weekly No Data and Sync Error outcomes stay in
+the hidden ledger and do not become consumer placeholders. Do not include a
+weekly wearable-calorie target or net-calorie recommendation.
 
 ### Events
 
@@ -149,9 +154,9 @@ and retrieval coverage.
 5. Read `Events` only when a workout or session must be identified or explained.
 6. Join Oura and nutrition/subjective data in memory on exact calendar `Date`.
    Do not create cross-workbook formulas or persist the joined result.
-7. Validate the Sheet contract version before using Oura data. On an unknown
-   version, ignore Oura, report the incompatibility, and continue the nutrition
-   task normally.
+7. Validate the marker-row workbook contract and row-level API/feature/source
+   versions before using Oura data. On an unknown version, ignore Oura, report
+   the incompatibility, and continue the nutrition task normally.
 
 ## Baseline contract
 
@@ -240,7 +245,8 @@ The updated web skill must behave correctly when:
 
 - Dedicated Oura spreadsheet URL and ID.
 - Final exact tab names and headers.
-- Sheet contract version and compatibility rule.
+- Workbook marker/layout contract, row-level API/feature/source versions, and
+  compatibility rules.
 - Freshness/staleness threshold.
 - Example sanitized Daily Signals, Weekly Trends, and Events rows.
 - Verification report for the staged lifetime backfill.

@@ -128,17 +128,17 @@ Official references:
 
 ### Google Sheets
 
-The desktop `oura-sync` skill calls deterministic API endpoints and writes only
-the separate private workbook defined by
+The desktop `oura-sync` skill calls the separate read-only MCP adapter, which
+in turn calls deterministic API endpoints, and writes only the separate private workbook defined by
 [the Sheet contract](<08 - Dedicated Oura Workbook Contract.md>).
 It hard-denies the Master Nutrition workbook ID and performs exact readback
 validation before advancing sync state.
 
 ### MCP
 
-MCP is developed in a separate project after API V1 stabilizes. Its tools map
-to API routes and contain no Oura OAuth, provider mapping, analytics, or Google
-logic.
+MCP lives in the separate `oura-mcp` project. Its bounded tools map to API
+routes, can manage the local API process, and contain no Oura OAuth, provider
+mapping, analytics, or Google logic.
 
 ### Web nutrition coach
 
