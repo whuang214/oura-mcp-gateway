@@ -41,7 +41,7 @@ async def test_collection_is_canonical_and_cursor_safe(
     first = await service.collection("daily_sleep", query)
 
     assert [item["day"] for item in first.data] == ["2026-07-08", "2026-07-09"]
-    assert first.data[0]["source_id"] == "ds-20260708"
+    assert first.data[0]["source_id"] == "fixture-daily-sleep-01"
     assert "id" not in first.data[0]
     assert first.continuation == {"provider_token": None, "offset": 2}
 
@@ -82,13 +82,13 @@ async def test_workout_document_has_explicit_units(
 ) -> None:
     service = OuraDataService(_settings(fixture_dir, tmp_path))
 
-    result = await service.document("workouts", "wo-20260710")
+    result = await service.document("workouts", "fixture-workout-03")
 
-    assert result.data["source_id"] == "wo-20260710"
-    assert result.data["calories_kcal"] == 620
-    assert result.data["duration_seconds"] == 8_100
+    assert result.data["source_id"] == "fixture-workout-03"
+    assert result.data["calories_kcal"] == 410
+    assert result.data["duration_seconds"] == 4_500
     assert result.data["distance_meters"] is None
-    assert result.data["utc_offset"] == "-06:00"
+    assert result.data["utc_offset"] == "+00:00"
 
 
 @pytest.mark.anyio
@@ -111,8 +111,8 @@ async def test_composite_days_omit_dates_without_source_data(
     days = [item["day"] for item in result.data]
     assert "2026-07-07" not in days
     assert days == ["2026-07-08", "2026-07-09", "2026-07-10", "2026-07-11"]
-    july_tenth = next(item for item in result.data if item["day"] == "2026-07-10")
-    assert july_tenth["workouts"][0]["activity"] == "volleyball"
+    sample_day = next(item for item in result.data if item["day"] == "2026-07-10")
+    assert sample_day["workouts"][0]["activity"] == "strength_training"
 
 
 @pytest.mark.anyio
@@ -134,11 +134,11 @@ async def test_daily_signals_are_analysis_ready_without_placeholders(
     days = [item["day"] for item in result.data]
     assert "2026-07-07" not in days
     assert days == ["2026-07-08", "2026-07-09", "2026-07-10", "2026-07-11"]
-    july_tenth = next(item for item in result.data if item["day"] == "2026-07-10")
-    assert july_tenth["sleep_display"] == "7h 20m"
-    assert july_tenth["workout_minutes"] == 135
-    assert july_tenth["active_calories_kcal_context_only"] != (
-        july_tenth["workout_calories_kcal_context_only"]
+    sample_day = next(item for item in result.data if item["day"] == "2026-07-10")
+    assert sample_day["sleep_display"] == "6h 30m"
+    assert sample_day["workout_minutes"] == 75
+    assert sample_day["active_calories_kcal_context_only"] != (
+        sample_day["workout_calories_kcal_context_only"]
     )
 
 
@@ -175,7 +175,7 @@ async def test_disabled_profile_and_missing_dense_sample_are_explicit(
     with pytest.raises(ApiError, match="sample is unavailable") as sample_error:
         await service.samples(
             "sleep_periods",
-            "sl-20260710-long",
+            "fixture-sleep-05",
             "heart_rate",
             ServiceQuery(parameters={"limit": 500}),
         )

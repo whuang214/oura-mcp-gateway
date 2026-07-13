@@ -1,11 +1,11 @@
 {
   "data": [
-    {"id": "sl-20260708-long", "day": "2026-07-08", "type": "long_sleep", "bedtime_start": "2026-07-07T23:05:00-06:00", "bedtime_end": "2026-07-08T07:10:00-06:00", "total_sleep_duration": 27000, "efficiency": 91, "average_hrv": 51, "lowest_heart_rate": 46},
-    {"id": "sl-20260709-long-b", "day": "2026-07-09", "type": "long_sleep", "bedtime_start": "2026-07-09T00:05:00-04:00", "bedtime_end": "2026-07-09T08:05:00-04:00", "total_sleep_duration": 25200, "efficiency": 89, "average_hrv": 47, "lowest_heart_rate": 47},
-    {"id": "sl-20260709-nap", "day": "2026-07-09", "type": "late_nap", "bedtime_start": "2026-07-09T16:00:00-04:00", "bedtime_end": "2026-07-09T16:40:00-04:00", "total_sleep_duration": 1800, "efficiency": 75, "average_hrv": 40, "lowest_heart_rate": 55},
-    {"id": "sl-20260709-rest", "day": "2026-07-09", "type": "rest", "bedtime_start": "2026-07-09T19:00:00-04:00", "bedtime_end": "2026-07-09T19:20:00-04:00", "total_sleep_duration": 900, "efficiency": 70},
-    {"id": "sl-20260710-long", "day": "2026-07-10", "type": "long_sleep", "bedtime_start": "2026-07-09T23:30:00-06:00", "bedtime_end": "2026-07-10T07:30:00-06:00", "total_sleep_duration": 26400, "efficiency": 92, "average_hrv": 56, "lowest_heart_rate": 44},
-    {"id": "sl-20260710-deleted", "day": "2026-07-10", "type": "deleted", "bedtime_start": "2026-07-10T12:00:00-06:00", "bedtime_end": "2026-07-10T12:10:00-06:00", "total_sleep_duration": 300}
+    {"id": "fixture-sleep-01", "day": "2026-07-08", "type": "long_sleep", "bedtime_start": "2026-07-08T00:00:00+00:00", "bedtime_end": "2026-07-08T07:00:00+00:00", "total_sleep_duration": 24600, "efficiency": 87, "average_hrv": 44, "lowest_heart_rate": 49},
+    {"id": "fixture-sleep-02", "day": "2026-07-09", "type": "long_sleep", "bedtime_start": "2026-07-09T00:00:00+00:00", "bedtime_end": "2026-07-09T08:00:00+00:00", "total_sleep_duration": 27600, "efficiency": 90, "average_hrv": 53, "lowest_heart_rate": 45},
+    {"id": "fixture-sleep-03", "day": "2026-07-09", "type": "late_nap", "bedtime_start": "2026-07-09T15:00:00+00:00", "bedtime_end": "2026-07-09T15:30:00+00:00", "total_sleep_duration": 1500, "efficiency": 80, "average_hrv": 41, "lowest_heart_rate": 54},
+    {"id": "fixture-sleep-04", "day": "2026-07-09", "type": "rest", "bedtime_start": "2026-07-09T18:00:00+00:00", "bedtime_end": "2026-07-09T18:20:00+00:00", "total_sleep_duration": 900, "efficiency": 72},
+    {"id": "fixture-sleep-05", "day": "2026-07-10", "type": "long_sleep", "bedtime_start": "2026-07-10T00:15:00+00:00", "bedtime_end": "2026-07-10T07:00:00+00:00", "total_sleep_duration": 23400, "efficiency": 86, "average_hrv": 46, "lowest_heart_rate": 48},
+    {"id": "fixture-sleep-deleted", "day": "2026-07-10", "type": "deleted", "bedtime_start": "2026-07-10T12:00:00+00:00", "bedtime_end": "2026-07-10T12:10:00+00:00", "total_sleep_duration": 300}
   ],
   "next_token": null
 }

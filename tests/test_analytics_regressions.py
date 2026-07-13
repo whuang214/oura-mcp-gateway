@@ -1,4 +1,4 @@
-"""Sanitized regression fixtures for the four transformation-handoff examples."""
+"""Synthetic regression cases for analysis-ready daily transformations."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 
 from oura_data_api.analytics import CoverageStatus, build_daily_signals
 
-SYNCED_AT = datetime(2026, 7, 12, 18, 30, tzinfo=timezone.utc)
+SYNCED_AT = datetime(2025, 2, 10, 12, 0, tzinfo=timezone.utc)
 
 
 def _core_day(day: str, *, sleep_seconds: int = 25_200) -> dict[str, list[dict[str, object]]]:
@@ -32,19 +32,19 @@ def _core_day(day: str, *, sleep_seconds: int = 25_200) -> dict[str, list[dict[s
     }
 
 
-def test_july_10_conversions_and_optional_resilience_warning() -> None:
-    resources = _core_day("2026-07-10", sleep_seconds=18_330)
+def test_duration_conversions_and_optional_resource_warning() -> None:
+    resources = _core_day("2025-02-05", sleep_seconds=19_845)
     resources["daily_stress"] = [
         {
-            "source_id": "stress-july-10",
-            "day": "2026-07-10",
-            "stress_high_seconds": 8_100,
-            "recovery_high_seconds": 900,
+            "source_id": "synthetic-stress",
+            "day": "2025-02-05",
+            "stress_high_seconds": 7_200,
+            "recovery_high_seconds": 1_800,
         }
     ]
     signal = build_daily_signals(
         resources,
-        today=date(2026, 7, 12),
+        today=date(2025, 2, 10),
         last_synced_at_utc=SYNCED_AT,
         outcomes_by_resource={
             "daily_resilience": {"outcome": "error", "code": "permission_denied"}
@@ -53,29 +53,29 @@ def test_july_10_conversions_and_optional_resilience_warning() -> None:
 
     assert signal.status is CoverageStatus.COMPLETE
     assert signal.core_coverage == "4/4"
-    assert signal.sleep_hours == 5.09
-    assert signal.sleep_display == "5h 6m"
-    assert signal.high_stress_hours == 2.25
-    assert signal.high_recovery_hours == 0.25
-    assert signal.recovery_minus_stress_hours == -2.0
+    assert signal.sleep_hours == 5.51
+    assert signal.sleep_display == "5h 31m"
+    assert signal.high_stress_hours == 2.0
+    assert signal.high_recovery_hours == 0.5
+    assert signal.recovery_minus_stress_hours == -1.5
     assert "daily_resilience:error:permission_denied" in (signal.warnings or "")
 
 
-def test_july_4_six_workouts_aggregate_without_mixing_active_calories() -> None:
-    resources = _core_day("2026-07-04")
-    resources["daily_activity"][0]["active_calories_kcal"] = 1_114
+def test_multiple_workouts_aggregate_without_mixing_active_calories() -> None:
+    resources = _core_day("2025-02-03")
+    resources["daily_activity"][0]["active_calories_kcal"] = 900
     workout_specs = [
-        ("dance", 10, 50),
-        ("dance", 15, 60),
-        ("walking", 20, 70),
-        ("walking", 18, 55),
-        ("walking", 21, 65),
-        ("walking", 20, 69),
+        ("cycling", 12, 40),
+        ("cycling", 18, 55),
+        ("walking", 25, 75),
+        ("walking", 20, 60),
+        ("walking", 15, 45),
+        ("yoga", 10, 30),
     ]
     resources["workouts"] = [
         {
             "source_id": f"workout-{index}",
-            "day": "2026-07-04",
+            "day": "2025-02-03",
             "activity": activity,
             "duration_seconds": minutes * 60,
             "calories_kcal": calories,
@@ -84,39 +84,39 @@ def test_july_4_six_workouts_aggregate_without_mixing_active_calories() -> None:
     ]
     signal = build_daily_signals(
         resources,
-        today=date(2026, 7, 12),
+        today=date(2025, 2, 10),
         last_synced_at_utc=SYNCED_AT,
     )[0]
 
     assert signal.workout_count == 6
-    assert signal.workout_minutes == 104
-    assert signal.workout_calories_kcal_context_only == 369
-    assert signal.active_calories_kcal_context_only == 1_114
-    assert signal.workout_types == "dance (2), walking (4)"
+    assert signal.workout_minutes == 100
+    assert signal.workout_calories_kcal_context_only == 305
+    assert signal.active_calories_kcal_context_only == 900
+    assert signal.workout_types == "cycling (2), walking (3), yoga (1)"
 
 
-def test_june_28_partial_activity_and_volleyball_keep_sleep_missing() -> None:
+def test_partial_activity_and_event_keep_sleep_missing() -> None:
     resources = {
         "daily_activity": [
             {
-                "source_id": "activity-june-28",
-                "day": "2026-06-28",
+                "source_id": "synthetic-activity",
+                "day": "2025-02-01",
                 "score": 76,
                 "steps": 7_500,
             }
         ],
         "workouts": [
             {
-                "source_id": "volleyball-june-28",
-                "day": "2026-06-28",
-                "activity": "volleyball",
-                "duration_seconds": 7_200,
+                "source_id": "synthetic-workout",
+                "day": "2025-02-01",
+                "activity": "rowing",
+                "duration_seconds": 3_600,
             }
         ],
     }
     signal = build_daily_signals(
         resources,
-        today=date(2026, 7, 12),
+        today=date(2025, 2, 10),
         last_synced_at_utc=SYNCED_AT,
     )[0]
 
@@ -127,23 +127,23 @@ def test_june_28_partial_activity_and_volleyball_keep_sleep_missing() -> None:
     assert signal.sleep_display is None
     assert signal.average_hrv_ms is None
     assert signal.workout_count == 1
-    assert signal.workout_types == "volleyball (1)"
+    assert signal.workout_types == "rowing (1)"
 
 
-def test_july_11_current_day_stays_provisional() -> None:
+def test_current_day_stays_provisional() -> None:
     resources = {
         "daily_activity": [
             {
-                "source_id": "activity-july-11",
-                "day": "2026-07-11",
-                "score": 43,
-                "steps": 1_800,
+                "source_id": "synthetic-current-activity",
+                "day": "2025-02-06",
+                "score": 60,
+                "steps": 2_500,
             }
         ]
     }
     signal = build_daily_signals(
         resources,
-        today=date(2026, 7, 11),
+        today=date(2025, 2, 6),
         last_synced_at_utc=SYNCED_AT,
     )[0]
 

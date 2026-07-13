@@ -73,20 +73,20 @@ def test_fixture_projection_preserves_canonical_day_and_separates_calories() -> 
     july_nine = by_day[date(2026, 7, 9)]
     assert july_nine.status is CoverageStatus.COMPLETE
     assert july_nine.core_coverage == "4/4"
-    assert july_nine.sleep_hours == 7.0
-    assert july_nine.sleep_display == "7h 0m"
-    assert july_nine.bedtime_local == "2026-07-09T00:05:00-04:00"
-    assert july_nine.wake_time_local == "2026-07-09T08:05:00-04:00"
+    assert july_nine.sleep_hours == 7.67
+    assert july_nine.sleep_display == "7h 40m"
+    assert july_nine.bedtime_local == "2026-07-09T00:00:00+00:00"
+    assert july_nine.wake_time_local == "2026-07-09T08:00:00+00:00"
     assert july_nine.workout_count == 2
-    assert july_nine.workout_minutes == 50
-    assert july_nine.workout_types == "running (1), walking (1)"
-    assert july_nine.active_calories_kcal_context_only == 733
-    assert july_nine.workout_calories_kcal_context_only == 390
+    assert july_nine.workout_minutes == 65
+    assert july_nine.workout_types == "cycling (1), walking (1)"
+    assert july_nine.active_calories_kcal_context_only == 512
+    assert july_nine.workout_calories_kcal_context_only == 340
 
     july_eight = by_day[date(2026, 7, 8)]
-    assert july_eight.high_stress_hours == 0.67
-    assert july_eight.high_recovery_hours == 1.42
-    assert july_eight.recovery_minus_stress_hours == 0.75
+    assert july_eight.high_stress_hours == 0.86
+    assert july_eight.high_recovery_hours == 1.17
+    assert july_eight.recovery_minus_stress_hours == 0.31
     assert by_day[date(2026, 7, 11)].status is CoverageStatus.PROVISIONAL
     assert by_day[date(2026, 7, 11)].core_coverage == "2/4"
 
@@ -303,7 +303,7 @@ def test_canonical_public_resource_and_field_names_are_first_class() -> None:
             {
                 "source_id": "workout",
                 "day": "2026-07-10",
-                "activity": "volleyball",
+                "activity": "cycling",
                 "duration_seconds": 90,
                 "calories_kcal": 20.5,
             }

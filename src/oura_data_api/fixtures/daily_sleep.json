@@ -1,9 +1,9 @@
 {
   "data": [
-    {"id": "ds-20260708", "day": "2026-07-08", "score": 82, "timestamp": "2026-07-08T07:15:00-06:00"},
-    {"id": "ds-20260709", "day": "2026-07-09", "score": 87, "timestamp": "2026-07-09T08:10:00-04:00"},
-    {"id": "ds-20260710", "day": "2026-07-10", "score": 90, "timestamp": "2026-07-10T07:30:00-06:00"},
-    {"id": "ds-20260711", "day": "2026-07-11", "score": 71, "timestamp": "2026-07-11T06:45:00-06:00"}
+    {"id": "fixture-daily-sleep-01", "day": "2026-07-08", "score": 76, "timestamp": "2026-07-08T07:00:00+00:00"},
+    {"id": "fixture-daily-sleep-02", "day": "2026-07-09", "score": 85, "timestamp": "2026-07-09T08:00:00+00:00"},
+    {"id": "fixture-daily-sleep-03", "day": "2026-07-10", "score": 79, "timestamp": "2026-07-10T07:00:00+00:00"},
+    {"id": "fixture-daily-sleep-04", "day": "2026-07-11", "score": 68, "timestamp": "2026-07-11T06:30:00+00:00"}
   ],
   "next_token": null
 }

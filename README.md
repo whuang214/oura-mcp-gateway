@@ -1,19 +1,38 @@
 # Oura Data API
 
-A self-hosted, read-only JSON API for your personal Oura data.
+A self-hosted, read-only JSON API for personal Oura data and deterministic
+recovery analytics.
 
-The project exposes a stable `/api/v1` contract for sleep, readiness, activity,
-stress, workouts, sessions, heart-rate data, and deterministic recovery trends.
-It uses the latest officially supported Oura provider API behind an internal
-adapter, so provider changes do not leak into the public project contract.
+The project turns Oura API v2 into a stable `/api/v1` contract with
+strict validation, explicit units, coverage-aware analytics, and predictable
+missing-data behavior. It is built with FastAPI and works as a standalone API
+for scripts, applications, dashboards, or AI integrations.
 
-Your Oura credentials and health data stay on your machine. The API does not
-write to Google Sheets or include an MCP server; those are separate optional
-consumers.
+## What it provides
+
+- Granular sleep, readiness, activity, stress, SpO2, workout, session, heart
+  rate, and ring resources
+- Analysis-ready daily signals and observed-only weekly trends
+- Local Oura OAuth, refresh-token rotation, and a separate API bearer token
+- Sanitized fixture data for development without an Oura account
+- A versioned response envelope, bounded pagination, and structured errors
+
+Missing data is never converted to zero or synthesized into placeholder days.
+Oura calorie estimates remain context-only and never become nutrition targets.
+
+## How it fits together
+
+```text
+Oura API -> provider adapter -> canonical models + analytics -> FastAPI -> your client
+```
+
+Oura provider details stay behind the adapter, so this project's V1 contract is
+independent of Oura's provider version. Google Sheets and MCP are optional
+consumers and are not part of this repository.
 
 ## Quick start
 
-Requirements: Python 3.11–3.14 and Git. Native ARM64 Python is recommended on
+Requirements: Python 3.11–3.14 and Git. Use a native ARM64 Python build on
 Windows ARM64.
 
 ```powershell
@@ -27,64 +46,90 @@ Copy-Item .env.example .env
 
 On macOS or Linux, activate with `source .venv/bin/activate`.
 
-Open `.env` and add your own Oura application credentials and a private gateway
-bearer token. Runtime configuration comes only from that file; Windows and shell
-environment variables are ignored.
-
-Create an Oura application at
-[Oura API Applications](https://cloud.ouraring.com/oauth/applications), then
-authorize it locally:
+For an offline demo, set `OURA_MODE=fixture` and add a private
+`OURA_GATEWAY_TOKEN` of at least 32 characters. For live data, add your Oura
+application credentials and run:
 
 ```powershell
 oura-oauth authorize
-```
-
-Start the API:
-
-```powershell
 oura-api
 ```
 
-The default local address is `http://127.0.0.1:8766`. Check liveness with:
+The API starts at `http://127.0.0.1:8766`. OpenAPI is available at
+`http://127.0.0.1:8766/docs` when enabled.
 
 ```powershell
 curl.exe http://127.0.0.1:8766/api/v1/health
 ```
 
-All health-data routes require the separate gateway bearer token. Never paste
-that token, Oura credentials, OAuth callback URLs, or personal health output
-into source code, issues, screenshots, or chat.
+See [Setup and authentication](<docs/01 - Setup and Authentication.md>) for
+the complete live-data flow.
 
-## What you can query
+## Endpoint overview
 
-- Granular daily sleep, readiness, activity, stress, SpO2, and heart-health
-  resources
-- Detailed sleep periods and explicitly requested sample series
-- Heart-rate and ring-battery time series
-- Workouts, sessions, enhanced tags, rest mode, and ring metadata
-- Composite days
-- Deterministic daily signals and coverage-aware weekly trends
+| Route family | What `data` returns |
+| --- | --- |
+| `/health`, `/status`, `/capabilities` | Liveness, sanitized runtime state, and available Oura resources |
+| `/auth/*`, `/profile` | Local OAuth connection operations and optional profile data |
+| `/days`, `/days/{day}` | Composite Oura days with requested sections and coverage |
+| `/analytics/daily-signals*` | Readable daily sleep, recovery, activity, stress, workout, and baseline fields |
+| `/analytics/daily-coverage` | One audit row for every requested date, including gaps and errors |
+| `/analytics/weekly-trends` | Observed weekly aggregates with counts and coverage denominators |
+| `/daily/*` | Granular daily activity, readiness, sleep, stress, SpO2, and heart-health records |
+| `/sleep-periods`, `/workouts`, `/sessions`, and related routes | Detailed sleep and event records |
+| `/heart-rate`, `/ring-battery` | Timestamped time-series samples |
+| `*/samples/*` | Explicitly requested dense source samples |
 
-Missing dates are omitted rather than replaced with zero-valued placeholders.
-Active and workout calories remain context-only fields and never become a
-nutrition target.
+All routes use the `/api/v1` prefix. Collections return arrays; document and
+single-day routes return one object. See the [full route reference](<docs/03 - API Routes.md>).
+
+## Response shape
+
+```json
+{
+  "data": [],
+  "meta": {
+    "api_version": "1",
+    "schema_version": "1.0.0",
+    "request_id": "01J...",
+    "next_cursor": null
+  },
+  "warnings": []
+}
+```
+
+Protected routes require `Authorization: Bearer <gateway-token>`. Date ranges
+are inclusive and limited to 90 days; time-series ranges are limited to seven
+days. Errors use `application/problem+json`.
+
+## Project structure
+
+```text
+src/oura_data_api/
+|-- api/          FastAPI routes, validation, envelopes, and errors
+|-- provider/     Oura transport and resource registry
+|-- services/     Request orchestration and canonical mapping
+|-- analytics/    Deterministic daily and weekly features
+|-- fixtures/     Sanitized offline sample data
+|-- auth.py       OAuth and protected token storage
+`-- config.py     Strict .env-only configuration
+scripts/          Distribution and privacy checks
+tests/            Unit, contract, security, and runtime tests
+docs/             Setup, design, route, and contributor guides
+```
 
 ## Documentation
 
-Read the numbered guides in order, beginning with the
-[documentation index](<docs/00 - Documentation Index.md>).
+Start with the [documentation map](docs/README.md), then use:
 
-The most important references are:
-
-- [Getting started](<docs/01 - Getting Started.md>)
-- [Authentication](<docs/02 - Authentication.md>)
-- [Configuration](<docs/03 - Configuration.md>)
-- [API V1 contract](<docs/06 - API V1 Contract.md>)
-- [Data contract](<docs/07 - Data Contract.md>)
+- [Setup and authentication](<docs/01 - Setup and Authentication.md>)
+- [System design](<docs/02 - System Design.md>)
+- [API routes](<docs/03 - API Routes.md>)
+- [Data model](<docs/04 - Data Model.md>)
+- [Configuration and security](<docs/05 - Configuration and Security.md>)
+- [Development](<docs/06 - Development.md>)
 
 ## Development
-
-Create the virtual environment as above, then install the development extras:
 
 ```powershell
 python -m pip install -e ".[dev]"
@@ -93,12 +138,13 @@ python -m ruff check .
 python -m mypy
 ```
 
-All validation is local; this repository intentionally has no hosted CI.
+## Related project
 
-## License and policies
+[Oura MCP](https://github.com/whuang214/oura-mcp) exposes this API to MCP
+clients and includes an optional Google Sheets sync skill.
 
-Licensed under the [MIT License](LICENSE). Oura metrics are wellness data, not
-medical advice. This project is not affiliated with or endorsed by Oura.
+## License
 
-- [Privacy](PRIVACY.md)
-- [Terms](TERMS.md)
+[MIT](LICENSE). See [Privacy](PRIVACY.md) and [Terms](TERMS.md). Oura metrics
+are wellness data, not medical advice. This project is not affiliated with or
+endorsed by Oura.

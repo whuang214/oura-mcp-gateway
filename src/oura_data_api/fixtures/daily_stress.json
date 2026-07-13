@@ -1,8 +1,8 @@
 {
   "data": [
-    {"id": "dst-20260708", "day": "2026-07-08", "stress_high": 2400, "recovery_high": 5100, "day_summary": "restored", "timestamp": "2026-07-08T23:59:00-06:00"},
-    {"id": "dst-20260709", "day": "2026-07-09", "stress_high": 4200, "recovery_high": 3300, "day_summary": "normal", "timestamp": "2026-07-09T23:59:00-04:00"},
-    {"id": "dst-20260710", "day": "2026-07-10", "stress_high": 1800, "recovery_high": 6200, "day_summary": "restored", "timestamp": "2026-07-10T23:59:00-06:00"}
+    {"id": "fixture-stress-01", "day": "2026-07-08", "stress_high": 3100, "recovery_high": 4200, "day_summary": "normal", "timestamp": "2026-07-08T23:59:00+00:00"},
+    {"id": "fixture-stress-02", "day": "2026-07-09", "stress_high": 2800, "recovery_high": 5600, "day_summary": "restored", "timestamp": "2026-07-09T23:59:00+00:00"},
+    {"id": "fixture-stress-03", "day": "2026-07-10", "stress_high": 4700, "recovery_high": 2100, "day_summary": "stressful", "timestamp": "2026-07-10T23:59:00+00:00"}
   ],
   "next_token": null
 }

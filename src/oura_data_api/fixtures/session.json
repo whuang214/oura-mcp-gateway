@@ -1,6 +1,6 @@
 {
   "data": [
-    {"id": "se-20260710", "day": "2026-07-10", "type": "meditation", "mood": "better", "start_datetime": "2026-07-10T22:00:00-06:00", "end_datetime": "2026-07-10T22:12:00-06:00"}
+    {"id": "fixture-session-01", "day": "2026-07-10", "type": "breathing", "mood": "same", "start_datetime": "2026-07-10T20:00:00+00:00", "end_datetime": "2026-07-10T20:15:00+00:00"}
   ],
   "next_token": null
 }

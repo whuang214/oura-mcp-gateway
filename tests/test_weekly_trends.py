@@ -105,7 +105,7 @@ def _weekly_resources() -> dict[str, list[dict[str, object]]]:
             {
                 "id": "w-1",
                 "day": "2026-07-06",
-                "activity": "volleyball",
+                "activity": "cycling",
                 "start_datetime": "2026-07-06T18:00:00-06:00",
                 "end_datetime": "2026-07-06T18:01:00-06:00",
             },
@@ -119,7 +119,7 @@ def _weekly_resources() -> dict[str, list[dict[str, object]]]:
             {
                 "id": "w-3",
                 "day": "2026-07-09",
-                "activity": "volleyball",
+                "activity": "cycling",
                 "start_datetime": "2026-07-09T18:00:00-06:00",
                 "end_datetime": "2026-07-09T18:30:00-06:00",
             },
@@ -212,7 +212,7 @@ def test_weekly_trend_uses_observed_values_and_explicit_coverage_denominators() 
     # Daily Signals row.
     assert trend.workout_count == 4
     assert trend.workout_minutes == 42
-    assert trend.workout_types == "mobility (1), volleyball (2), walking (1)"
+    assert trend.workout_types == "cycling (2), mobility (1), walking (1)"
     assert trend.contributor_attention_frequency == "Deep Sleep (2), Recovery Index (1)"
     assert "daily_readiness:error:transport" in (trend.warnings or "")
 

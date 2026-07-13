@@ -60,7 +60,7 @@ def test_composition_root_ignores_process_and_uvicorn_environment(
         assert health.status_code == 200
         assert status.status_code == 200
         assert daily_sleep.status_code == 200
-        assert daily_sleep.json()["data"][0]["source_id"] == "ds-20260708"
+        assert daily_sleep.json()["data"][0]["source_id"] == "fixture-daily-sleep-01"
         assert signals.status_code == 200
         assert [item["day"] for item in signals.json()["data"]] == [
             "2026-07-08",

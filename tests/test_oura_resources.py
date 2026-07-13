@@ -92,7 +92,7 @@ async def test_fixture_client_handles_date_pages_and_document_lookup(tmp_path: P
                 {
                     "data": [
                         {"id": "c", "day": "2026-07-03", "score": 72},
-                        {"id": "d", "day": "2026-07-04", "score": 73},
+                        {"id": "d", "day": "2026-07-05", "score": 73},
                     ],
                     "next_token": None,
                 },
