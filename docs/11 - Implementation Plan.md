@@ -50,9 +50,9 @@ frozen rows, filters, and date formatting. The workbook remains empty until the
 new end-to-end path passes validation. The Master Nutrition workbook is
 unchanged.
 
-## Staged MCP and skill work
+## Published MCP and installed skill
 
-The separate `oura-mcp` project is staged locally with:
+The separate `oura-mcp` project is published with:
 
 - strict file-only configuration and no Codex `env_vars` dependency;
 - authenticated API identity checks before reusing a listener;
@@ -62,10 +62,19 @@ The separate `oura-mcp` project is staged locally with:
   sync-bundle tools;
 - event enrichment and per-resource outcomes for retry-safe partial sync;
 - an official-initializer `$oura-sync` skill package;
+- standard `venv`/pip packaging with pinned runtime and development dependencies;
+- native Windows ARM64 installation and compiled-artifact validation;
 - fail-closed workbook validation and scalar row rendering;
 - RAW numeric-date writes, null/zero preservation, and formula-injection safety;
 - deterministic reconciliation planning, hashing, and readback comparison;
 - no consumer placeholders for finalized no-data dates or weeks.
+
+The full MCP suite, strict typing, lint, branch-aware coverage, wheel/privacy
+audit, official skill validation, tool-schema validation, and managed-child
+live smoke test pass. The replacement skill is installed from the published
+repository with a private validated dedicated-workbook configuration. Codex is
+configured without `env` or `env_vars`; an application restart is required to
+load the new server and skill.
 
 The MCP owns no Oura provider logic, OAuth flow, analytics formula, workbook
 identity, or Google Sheets writer. The skill owns no direct Oura/API client and
@@ -73,29 +82,13 @@ retrieves data only through MCP tools.
 
 ## Remaining cutover gates
 
-### 1. Package and protocol validation
+### 1. Restart verification
 
-1. Create a fresh native ARM64 MCP `venv`.
-2. Install the pinned runtime and development dependencies.
-3. Run the complete unit suite, coverage, lint, strict typing, wheel build, and
-   privacy audit.
-4. Run the official skill quick validator.
-5. Run in-memory MCP inventory/schema/unknown-argument tests.
-6. Run a fixture-mode managed-child end-to-end smoke test.
+1. Restart Codex so it loads the published MCP and replacement skill.
+2. Run status/capabilities and confirm the API home timezone, authenticated
+   provider connection, tool inventory, and dedicated destination identity.
 
-### 2. Installed skill and Codex configuration
-
-1. Create the ignored private `local-config.md` with the dedicated workbook
-   identity, protected nutrition workbook ID, history start, timezone, and MCP
-   server name.
-2. Validate a staged installed copy.
-3. Atomically replace the old `$oura-sync` directory; retain a
-   non-discoverable rollback copy only through the observation window.
-4. Configure Codex with the MCP venv interpreter, module, working directory,
-   and timeouts only. Do not add `env` or `env_vars`.
-5. Restart Codex and run status/capabilities before any Sheet write.
-
-### 3. Staged lifetime backfill
+### 2. Staged lifetime backfill
 
 1. Discover the earliest usable Oura day without fabricating empty dates.
 2. Dry-run bounded ranges of at most 90 days.
@@ -110,7 +103,7 @@ retrieves data only through MCP tools.
 8. Validate the June 28, July 4, July 10, and July 11 scenarios when those
    source dates exist.
 
-### 4. Web consumer update
+### 3. Web consumer update
 
 Give the owner of `$will-nutrition-coach` the private workbook identity and
 [web consumer handoff](<09 - Web Consumer Handoff.md>). The web skill must:
